@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { Header } from './shared/Header';
 import { Footer } from './shared/Footer';
-import { Card } from './shared/Card';
 import { PeriodFilter } from './PeriodFilter';
-import { Skeleton } from './shared/Skeleton';
+import { BlocoA_Hero } from './BlocoA_Hero';
+import { BlocoB_Funil } from './BlocoB_Funil';
+import { BlocoC_Campanhas } from './BlocoC_Campanhas';
+import { BlocoD_Velocidade } from './BlocoD_Velocidade';
+import { BlocoE_Mix } from './BlocoE_Mix';
+import { BlocoF_Saturacao } from './BlocoF_Saturacao';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import type { PeriodPreset } from '@/lib/types';
 
-const PLACEHOLDERS = [
-  { tag: 'Hero do Dia', title: 'Bloco A' },
-  { tag: 'Funil ao Vivo', title: 'Bloco B' },
-  { tag: 'Performance por Campanha', title: 'Bloco C' },
-  { tag: 'Velocidade Comercial', title: 'Bloco D' },
-  { tag: 'Mix de Produto', title: 'Bloco E' },
-  { tag: 'Saturação Criativa', title: 'Bloco F' },
-];
+const PERIOD_LABELS: Record<PeriodPreset, string> = {
+  hoje: 'Hoje',
+  '7d': 'Últimos 7 dias',
+  '30d': 'Últimos 30 dias',
+  mes_atual: 'Mês atual',
+};
 
 export function DashboardContainer() {
   const { data, loading, error, refresh } = useDashboardData();
@@ -27,7 +29,9 @@ export function DashboardContainer() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
           <div>
             <span className="section-tag">Visão geral</span>
-            <h1 className="font-display text-3xl md:text-4xl text-white mt-1">Dashboard Revert · {period === 'hoje' ? 'Hoje' : period === '7d' ? 'Últimos 7 dias' : period === '30d' ? 'Últimos 30 dias' : 'Mês atual'}</h1>
+            <h1 className="font-display text-3xl md:text-4xl text-white mt-1">
+              Dashboard Revert · {PERIOD_LABELS[period]}
+            </h1>
           </div>
           <PeriodFilter value={period} onChange={setPeriod} />
         </div>
@@ -49,23 +53,22 @@ export function DashboardContainer() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {PLACEHOLDERS.map((p) => (
-            <Card key={p.tag} tag={p.tag}>
-              {loading && !data ? (
-                <>
-                  <Skeleton className="h-10 w-2/3 mb-3" />
-                  <Skeleton className="h-4 w-1/2 mb-2" />
-                  <Skeleton className="h-4 w-1/3" />
-                </>
-              ) : (
-                <>
-                  <div className="font-display text-2xl text-gold mb-2">{p.title}</div>
-                  <p className="text-sm text-gray-500">Em construção — próxima story.</p>
-                </>
-              )}
-            </Card>
-          ))}
+        <div className="space-y-6">
+          <BlocoA_Hero data={data?.hero ?? null} loading={loading} />
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <BlocoB_Funil data={data?.funil ?? null} loading={loading} />
+            <BlocoE_Mix data={data?.mix_produto ?? null} loading={loading} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5">
+            <BlocoC_Campanhas data={data?.campanhas ?? null} loading={loading} />
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <BlocoD_Velocidade data={data?.velocidade ?? null} loading={loading} />
+            <BlocoF_Saturacao data={data?.saturacao ?? null} loading={loading} />
+          </div>
         </div>
       </main>
       <Footer />
