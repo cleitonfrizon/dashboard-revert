@@ -73,6 +73,19 @@
 
 ---
 
+## Sessão 13/05/2026 (parte 2) — Sprint 2 Robustez
+
+| Ação | Detalhe |
+|---|---|
+| HTTP status codes corretos no webhook | `Respond JSON` agora usa `responseCode: "={{ $json._httpStatus }}"`. Webhook retorna 401 em token inválido e 200 em cache válido (resolve ADR-031, pendência 🟢) |
+| Paginação Reonic `/contacts` | Node `Buscar Contacts Reonic` migrado de `httpRequest` para `code` com loop `for (page = 1..50)` até `length === 0` ou `< 100`. Header correto: `x-authorization` (não `Authorization` — daí o erro enganoso "There is no Authentication header" em testes manuais). Saída: `{items: [...]}` consumida pelo `unwrap` em `Calcular Metricas`. Resultado: **234 contacts** carregados (antes capava em 100) |
+| Paginação Reonic `/h360/offers` | Mesmo padrão. Saída: `{results: [...]}`. Resultado: **234 offers** carregados (antes capava em 100) |
+| Meta Graph v23.0 → v25.0 | 3 nodes Meta (`Campanhas`, `Insights`, `Ads`) com URL atualizada via patch script; execução 354 validou sem erros (11 campanhas, 2 insights, 14 ads retornados) |
+| Validação | Cron acelerado para `0 * * * * *` (cada minuto), 3 execuções sucessivas com `status=success`, cron restaurado para `0 */30 * * * *`. Webhook respondendo `cached_at: 2026-05-13T21:40:13.089Z` com `funil.leads: 49` (vs `21` no cache pré-paginação) |
+| Bug operacional descoberto | PUT no workflow via API n8n sobrescreve `staticData` se enviado no payload. Solução: omitir `staticData` do payload de PUT para preservar cache em runtime |
+
+---
+
 ## Pendências para Cleiton
 
 ### 🔴 Críticas (antes de mostrar ao Robson)
@@ -84,10 +97,16 @@
 - [ ] **Q-4 (Robson)**: campo `produto` no Reonic — destrava Bloco E
 - [ ] **Q-5 (Robson)**: critério objetivo de MQL — destrava cálculo mais preciso na coluna MQL do Bloco C
 
-### 🟢 Pode esperar Sprint 2
-- [ ] **Paginação Reonic** (ADR-031): hoje só puxa página 1 de `/contacts` e `/h360/offers` (100 itens cada). Para a Revert ainda sobra margem mas vale paginar quando volume crescer
-- [ ] **HTTP status codes do webhook**: hoje retorna 200 sempre, com `ok:false` no body. Idealmente 401/503 (ver ADR-031)
-- [ ] **Meta Graph v25.0**: API auto-upgrade v23.0 → v25.0 (Meta avisou nos response headers). Ajustar `v23.0` → `v25.0` no workflow antes da deprecação
+### 🟢 Sprint 2 — concluído nesta sessão
+- [x] ~~Paginação Reonic~~ — implementada via Code nodes com loop, 234 contacts + 234 offers
+- [x] ~~HTTP status codes do webhook~~ — 401/200 dinâmicos via `responseCode` expression
+- [x] ~~Meta Graph v25.0~~ — bump dos 3 nodes Meta aplicado e validado
+
+### 🟢 Sprint 2 — ainda pendente
+- [ ] Google Ads (PRD seção 11 roadmap)
+- [ ] Sentry + alertas (v1.4 do roadmap)
+- [ ] Magic link auth (v1.1 substituindo senha compartilhada)
+- [ ] HTTP 503 quando cache ausente (hoje resolve para 200 porque cache sempre existe após primeiro ciclo de cron — vale adicionar quando houver risco real de cold-start)
 
 ---
 
