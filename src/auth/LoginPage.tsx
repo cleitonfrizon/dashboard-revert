@@ -38,7 +38,7 @@ export function LoginPage() {
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center mb-8">
             <img
-              src="/escala-logo.svg"
+              src="/escala-logo.png"
               alt="Escala Negócios Digitais"
               className="h-[120px] w-auto mb-6"
               style={{ filter: 'drop-shadow(0 0 40px rgba(200,168,78,0.25)) drop-shadow(0 4px 24px rgba(0,0,0,0.6))' }}

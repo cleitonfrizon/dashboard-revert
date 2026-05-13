@@ -58,17 +58,29 @@
 | 6 | Reonic `contacts` returned 100 items separados | n8n divide arrays em items por padrão | Refatorou Code com `safeAll().map()` + função `unwrap` |
 | 7 | `bcrypt.compareSync` returnou false | Linha `VITE_DASHBOARD_PASSWORD_HASH` ficou comentada após patch | Removeu `# ` da linha; revalidou |
 | 8 | `vercel --token "$T"` rejeitado | Token Vercel contém `:` interpretado como param separator | Splitou em `--token vcp_...` + `--scope team_...` |
+| 9 | Senha sempre "incorreta" em produção | Envs `VITE_*` nunca foram adicionadas via `vercel env add` → como `VITE_*` é inlineado em build-time, o bundle saiu sem hash; `bcrypt.compareSync(senha, undefined)` retorna false | `vercel env add` das 3 envs (HASH/API_URL/API_TOKEN) em production + `vercel --prod` (sessão de 13/05/2026) |
+
+---
+
+## Sessão 13/05/2026 — Correção + rotações
+
+| Ação | Detalhe |
+|---|---|
+| Fix bug #9 | 3 envs `VITE_*` adicionadas em production e bundle regerado |
+| Logo PNG oficial | `public/escala-logo.png` (1440x1440, 325 KB) copiado de `CLIENTES/ESCALA/logos/logo escala.png`; `Header.tsx` + `LoginPage.tsx` apontando para `.png` |
+| Rotação DASHBOARD_API_TOKEN | Novo token 64-char hex gerado; jsCode do node `Validar Token e Servir Cache` no workflow `AJypFIeC4rMcs18P` atualizado via API n8n; `VITE_DASHBOARD_API_TOKEN` no Vercel substituído; redeploy validado (token velho retorna `INVALID_TOKEN`, novo retorna `ok:true`) |
+| Rotação senha dashboard | Nova senha 22-char gerada; hash bcrypt(10) atualizado em `VITE_DASHBOARD_PASSWORD_HASH` no Vercel; redeploy validado (bundle `index-BwwerC59.js` contém hash novo) |
 
 ---
 
 ## Pendências para Cleiton
 
 ### 🔴 Críticas (antes de mostrar ao Robson)
-- [ ] **Logo PNG oficial**: substituir `public/escala-logo.svg` pelo asset Escala original (ver ADR-031). O fallback SVG é funcional mas não é o asset oficial
-- [ ] **`git push origin main` + `git push --tags`**: terminal local não tinha credenciais GitHub. Rodar `gh auth login` ou configurar credential.helper antes de pushear
+- [ ] **`git push origin main` + `git push --tags`**: terminal local não tinha credenciais GitHub. Rodar `gh auth login` ou configurar credential.helper antes de pushear (inclui commits do logo PNG + tag `v1.0.0-mvp`)
+- [ ] **Atualizar `.env.local` local** com a nova senha + novo DASHBOARD_API_TOKEN (valores entregues fora do report) — produção já está com os valores novos, mas o local está desincronizado
 
 ### 🟡 Importantes
-- [ ] **Rotacionar tokens expostos**: META_GRAPH_TOKEN, REONIC_API_KEY, N8N_API_KEY, VERCEL_TOKEN, DASHBOARD_API_TOKEN foram colados no chat. Trocar todos por novos e reconfigurar no `.env.local` + `vercel env` quando aplicável
+- [ ] **Rotacionar tokens externos restantes**: META_GRAPH_TOKEN (developers.facebook.com), REONIC_API_KEY (painel Reonic), N8N_API_KEY (n8n settings → API), VERCEL_TOKEN (vercel.com/account/tokens). DASHBOARD_API_TOKEN e senha do dashboard já foram rotacionados nesta sessão
 - [ ] **Q-4 (Robson)**: campo `produto` no Reonic — destrava Bloco E
 - [ ] **Q-5 (Robson)**: critério objetivo de MQL — destrava cálculo mais preciso na coluna MQL do Bloco C
 

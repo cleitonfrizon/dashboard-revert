@@ -15,7 +15,7 @@ export function Header({ generatedAt, onRefresh, loading }: HeaderProps) {
       <div className="container mx-auto flex items-center justify-between gap-4 px-4 lg:px-8 py-4">
         <div className="flex items-center gap-4 min-w-0">
           <img
-            src="/escala-logo.svg"
+            src="/escala-logo.png"
             alt="Escala"
             className="h-[56px] w-auto"
             style={{ filter: 'drop-shadow(0 0 40px rgba(200,168,78,0.2)) drop-shadow(0 4px 20px rgba(0,0,0,0.5))' }}
