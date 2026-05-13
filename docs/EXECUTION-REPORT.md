@@ -102,11 +102,20 @@
 - [x] ~~HTTP status codes do webhook~~ — 401/200 dinâmicos via `responseCode` expression
 - [x] ~~Meta Graph v25.0~~ — bump dos 3 nodes Meta aplicado e validado
 
+### 🟢 Sprint 2 — Sentry frontend (parte 3 da sessão 13/05)
+
+- [x] **@sentry/react instalado** (10.53.1) + helper em `src/lib/sentry.ts` (init, captureException, ErrorBoundary wrapper)
+- [x] **ErrorBoundary** envolvendo `<App />` em `main.tsx` com FallbackUI estilizado (gold/black + botão "Tentar novamente")
+- [x] **captureException** ligado em `useDashboardData.ts` para erros inesperados (ignora CACHE_REFRESHING/INVALID_TOKEN que são esperados)
+- [x] **No-op gracioso** quando `VITE_SENTRY_DSN` não está setado (console.error como fallback)
+- [x] **PII protection** via `beforeSend` (remove Authorization header) e `sendDefaultPii: false`
+- [x] Build validado (bundle `index-Bk2UmpdM.js`, 255 KB / 85 KB gzip — antes 238 KB / 79 KB) e deploy em produção
+- [ ] **PENDENTE pro Cleiton:** criar projeto Sentry em https://sentry.io (free tier suporta 5K events/mês) e adicionar `VITE_SENTRY_DSN` no Vercel + redeploy. Sem isso, erros caem em `console.error` apenas.
+
 ### 🟢 Sprint 2 — ainda pendente
 - [ ] Google Ads (PRD seção 11 roadmap)
-- [ ] Sentry + alertas (v1.4 do roadmap)
 - [ ] Magic link auth (v1.1 substituindo senha compartilhada)
-- [ ] HTTP 503 quando cache ausente (hoje resolve para 200 porque cache sempre existe após primeiro ciclo de cron — vale adicionar quando houver risco real de cold-start)
+- [ ] Observability no n8n: enviar erros do workflow pro Sentry via HTTP Request (depende do DSN configurado)
 
 ---
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchDashboard, DashboardApiError } from '@/lib/api';
+import { captureException } from '@/lib/sentry';
 import type { DashboardCache } from '@/lib/types';
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
@@ -32,6 +33,11 @@ export function useDashboardData(): DashboardState {
       setFetchedAt(new Date());
     } catch (err) {
       if (ctrl.signal.aborted) return;
+      const isExpectedApiError =
+        err instanceof DashboardApiError && (err.code === 'CACHE_REFRESHING' || err.code === 'INVALID_TOKEN');
+      if (!isExpectedApiError) {
+        captureException(err, { hook: 'useDashboardData' });
+      }
       if (err instanceof DashboardApiError) {
         setError(`${err.code}: ${err.message}`);
       } else if (err instanceof Error) {

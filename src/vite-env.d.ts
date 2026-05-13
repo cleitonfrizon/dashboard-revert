@@ -4,6 +4,8 @@ interface ImportMetaEnv {
   readonly VITE_DASHBOARD_API_URL: string;
   readonly VITE_DASHBOARD_API_TOKEN: string;
   readonly VITE_DASHBOARD_PASSWORD_HASH: string;
+  readonly VITE_SENTRY_DSN?: string;
+  readonly VITE_RELEASE?: string;
 }
 
 interface ImportMeta {
