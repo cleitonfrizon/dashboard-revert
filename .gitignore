@@ -79,3 +79,5 @@ credentials.json
 *.pem
 *.key
 *-token.txt
+
+.vercel
