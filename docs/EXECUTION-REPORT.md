@@ -112,10 +112,18 @@
 - [x] Build validado (bundle `index-Bk2UmpdM.js`, 255 KB / 85 KB gzip — antes 238 KB / 79 KB) e deploy em produção
 - [ ] **PENDENTE pro Cleiton:** criar projeto Sentry em https://sentry.io (free tier suporta 5K events/mês) e adicionar `VITE_SENTRY_DSN` no Vercel + redeploy. Sem isso, erros caem em `console.error` apenas.
 
+### 🟢 Sprint 2 — Polimento UX (parte 4 da sessão 13/05)
+
+- [x] **Timestamps relativos auto-atualizando**: tick de 30s no `Header.tsx` faz o "há X min" atualizar sem precisar refresh manual
+- [x] **Loading skeleton**: já implementado em todos os 6 blocos (estado pré-existente)
+- [x] **Hover dourado refinado nos cards**: `.card-escala:hover` agora tem border-gold/40 + box-shadow dourado sutil (transition 300ms)
+- [x] **Fade-in stagger nos blocos**: animação `fade-in-up` (0.5s) com stagger 50ms→280ms entre os 4 grupos do dashboard
+
 ### 🟢 Sprint 2 — ainda pendente
-- [ ] Google Ads (PRD seção 11 roadmap)
-- [ ] Magic link auth (v1.1 substituindo senha compartilhada)
+- [ ] Google Ads (PRD seção 11 roadmap) — requer credenciais Google Ads (developer token + OAuth + customer_id)
+- [ ] Magic link auth — bloqueado: nenhum workflow do n8n tem SMTP configurado. Requer credencial externa (Gmail/Resend/Mailgun) ou pivotar para Magic Link via WhatsApp/Zaia
 - [ ] Observability no n8n: enviar erros do workflow pro Sentry via HTTP Request (depende do DSN configurado)
+- [ ] **Sentry DSN**: criar projeto em sentry.io e adicionar `VITE_SENTRY_DSN` no Vercel
 
 ---
 

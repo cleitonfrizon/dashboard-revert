@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { LogOut, RefreshCw } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/formatters';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,6 +11,11 @@ export interface HeaderProps {
 
 export function Header({ generatedAt, onRefresh, loading }: HeaderProps) {
   const { logout } = useAuth();
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((t) => t + 1), 30000);
+    return () => window.clearInterval(id);
+  }, []);
   return (
     <header className="border-b border-gold/10 bg-black sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-black/80">
       <div className="container mx-auto flex items-center justify-between gap-4 px-4 lg:px-8 py-4">

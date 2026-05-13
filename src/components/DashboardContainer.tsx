@@ -54,18 +54,20 @@ export function DashboardContainer() {
         )}
 
         <div className="space-y-6">
-          <BlocoA_Hero data={data?.hero ?? null} loading={loading} />
+          <div className="animate-fade-in-up">
+            <BlocoA_Hero data={data?.hero ?? null} loading={loading} />
+          </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-1">
             <BlocoB_Funil data={data?.funil ?? null} loading={loading} />
             <BlocoE_Mix data={data?.mix_produto ?? null} loading={loading} />
           </div>
 
-          <div className="grid grid-cols-1 gap-5">
+          <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-2">
             <BlocoC_Campanhas data={data?.campanhas ?? null} loading={loading} />
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-3">
             <BlocoD_Velocidade data={data?.velocidade ?? null} loading={loading} />
             <BlocoF_Saturacao data={data?.saturacao ?? null} loading={loading} />
           </div>
