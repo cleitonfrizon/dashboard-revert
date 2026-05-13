@@ -1,0 +1,932 @@
+{
+  "name": "Revert Dashboard",
+  "description": "Cron */30 agrega Meta Ads + Reonic em /tmp/revert-dashboard-cache.json com Hero, Funil, Campanhas, Velocidade e Saturação calculados",
+  "active": true,
+  "nodes": [
+    {
+      "id": "745bb517-7d17-43dc-b9b1-759857c4b05e",
+      "name": "Cron 30min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */30 * * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5210f0cc-450e-42f4-beaf-06515459d7aa",
+      "name": "Buscar Campanhas Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        460,
+        400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://graph.facebook.com/v23.0/act_608480425054965/campaigns",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,name,status,objective,daily_budget"
+            },
+            {
+              "name": "filtering",
+              "value": "[{\"field\":\"effective_status\",\"operator\":\"IN\",\"value\":[\"ACTIVE\",\"PAUSED\"]}]"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "credentials": {
+        "facebookGraphApi": {
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "id": "35f881d5-8cac-4c69-8687-dff85144e171",
+      "name": "Buscar Insights Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        680,
+        400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://graph.facebook.com/v23.0/act_608480425054965/insights",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "campaign_id,campaign_name,spend,impressions,reach,clicks,ctr,cpm,frequency,actions"
+            },
+            {
+              "name": "level",
+              "value": "campaign"
+            },
+            {
+              "name": "date_preset",
+              "value": "last_7d"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "credentials": {
+        "facebookGraphApi": {
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "id": "19e4b6eb-5845-48e6-b32e-928906eb2d2a",
+      "name": "Buscar Ads Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        900,
+        400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://graph.facebook.com/v23.0/act_608480425054965/insights",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "ad_id,ad_name,campaign_name,spend,impressions,reach,frequency,ctr,actions"
+            },
+            {
+              "name": "level",
+              "value": "ad"
+            },
+            {
+              "name": "date_preset",
+              "value": "last_7d"
+            },
+            {
+              "name": "limit",
+              "value": "200"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "credentials": {
+        "facebookGraphApi": {
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "id": "dd09118d-467c-4c67-bf75-76f7f0cc983d",
+      "name": "Buscar Contacts Reonic",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.reonic.de/rest/v2/clients/29d4c1e4-d67a-4c89-99bb-8980f5bad9dc/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-authorization",
+              "value": "Basic MjlkNGMxZTQtZDY3YS00Yzg5LTk5YmItODk4MGY1YmFkOWRjOjQyYjgxZWFhODExNzRhMmE4NDVkNzNlM2MyOGE2ZTQ1YjljZjM3MDBhZTU0NDJjYWIxMzVjMmIwYjliMTFmNjc="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "page",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true
+    },
+    {
+      "id": "6eded207-2643-43e2-8da9-58da601b2dd0",
+      "name": "Buscar Offers Reonic",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1340,
+        400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.reonic.de/rest/v2/clients/29d4c1e4-d67a-4c89-99bb-8980f5bad9dc/h360/offers",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-authorization",
+              "value": "Basic MjlkNGMxZTQtZDY3YS00Yzg5LTk5YmItODk4MGY1YmFkOWRjOjQyYjgxZWFhODExNzRhMmE4NDVkNzNlM2MyOGE2ZTQ1YjljZjM3MDBhZTU0NDJjYWIxMzVjMmIwYjliMTFmNjc="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "page",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true
+    },
+    {
+      "id": "e10a0322-268a-48eb-9c4b-f4367fd67488",
+      "name": "Calcular Metricas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const SP_OFFSET = -3 * 60 * 60 * 1000;\nconst now = new Date();\nconst nowSP = new Date(now.getTime() + SP_OFFSET);\nconst startOfTodaySP = new Date(nowSP); startOfTodaySP.setUTCHours(0,0,0,0);\nconst startOfYesterdaySP = new Date(startOfTodaySP); startOfYesterdaySP.setUTCDate(startOfYesterdaySP.getUTCDate() - 1);\nconst sevenDaysAgo = new Date(startOfTodaySP); sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);\nconst thirtyDaysAgo = new Date(startOfTodaySP); thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);\n\nfunction safeFirst(name) { try { return $(name).first().json; } catch (e) { return null; } }\nfunction safeAll(name) { try { return $(name).all().map(function(i){return i.json;}); } catch (e) { return []; } }\nfunction unwrap(rawAll, keys) {\n  if (!rawAll || rawAll.length === 0) return [];\n  if (rawAll.length === 1 && rawAll[0] && typeof rawAll[0] === 'object' && !Array.isArray(rawAll[0])) {\n    const o = rawAll[0];\n    for (let i = 0; i < keys.length; i++) { if (Array.isArray(o[keys[i]])) return o[keys[i]]; }\n    if (o.id) return [o];\n    return [];\n  }\n  return rawAll;\n}\nfunction toNumber(v) { const n = Number(v); return isFinite(n) ? n : 0; }\nfunction ms(iso) { return iso ? new Date(iso).getTime() : 0; }\nfunction lower(s) { return String(s || '').toLowerCase(); }\nfunction contains(s, sub) { return lower(s).indexOf(lower(sub)) !== -1; }\n\nconst campaignsPayload = safeFirst('Buscar Campanhas Meta');\nconst insightsPayload = safeFirst('Buscar Insights Meta');\nconst adsPayload = safeFirst('Buscar Ads Meta');\nconst campaigns = (campaignsPayload && Array.isArray(campaignsPayload.data)) ? campaignsPayload.data : [];\nconst insights = (insightsPayload && Array.isArray(insightsPayload.data)) ? insightsPayload.data : [];\nconst ads = (adsPayload && Array.isArray(adsPayload.data)) ? adsPayload.data : [];\n\nconst contacts = unwrap(safeAll('Buscar Contacts Reonic'), ['data','items','contacts','results']);\nconst offers = unwrap(safeAll('Buscar Offers Reonic'), ['results','data','items','offers']);\n\nconst contactsEnriched = contacts.map(function(c){ return Object.assign({}, c, { createdAtMs: ms(c.createdAt) }); });\nconst offersEnriched = offers.map(function(o){ return Object.assign({}, o, { customerId: (o.customer && o.customer.id) || null, requestCreatedAtMs: ms(o.requestCreatedAt), offerCreatedAtMs: ms(o.offerCreatedAt), wonAtMs: ms(o.wonAt), lostAtMs: ms(o.lostAt) }); });\n\nfunction firstResponseMs(contact) { const matching = offersEnriched.filter(function(o){ return o.customerId === contact.id; }); if (!matching.length) return 0; const reqTimes = matching.map(function(o){ return o.requestCreatedAtMs || o.offerCreatedAtMs; }).filter(function(t){ return t > 0; }); if (!reqTimes.length) return 0; return Math.min.apply(null, reqTimes); }\n\nconst contactsWithResponse = contactsEnriched.map(function(c){ const fr = firstResponseMs(c); return Object.assign({}, c, { firstResponseMs: fr, responded: fr > 0, responseTimeSec: fr > 0 ? Math.max(0, Math.floor((fr - c.createdAtMs)/1000)) : null }); });\n\nconst contactsToday = contactsWithResponse.filter(function(c){ return c.createdAtMs >= startOfTodaySP.getTime(); });\nconst contactsYesterday = contactsWithResponse.filter(function(c){ return c.createdAtMs >= startOfYesterdaySP.getTime() && c.createdAtMs < startOfTodaySP.getTime(); });\nconst contacts7d = contactsWithResponse.filter(function(c){ return c.createdAtMs >= sevenDaysAgo.getTime() && c.createdAtMs < startOfTodaySP.getTime(); });\nconst contacts30d = contactsWithResponse.filter(function(c){ return c.createdAtMs >= thirtyDaysAgo.getTime(); });\n\nconst totalSpend7d = insights.reduce(function(s, i){ return s + toNumber(i.spend); }, 0);\nconst spendToday = totalSpend7d / 7;\nconst spend7dAvg = totalSpend7d / 7;\nconst spendTodayDelta = spend7dAvg > 0 ? ((spendToday - spend7dAvg) / spend7dAvg) * 100 : 0;\nconst cplToday = contactsToday.length > 0 ? spendToday / contactsToday.length : 0;\nconst leads7dCount = contacts7d.length || 1;\nconst cpl7dAvg = totalSpend7d / leads7dCount;\nlet cplStatus = 'good';\nif (cplToday > 15) cplStatus = 'bad'; else if (cplToday > 10) cplStatus = 'warning';\n\nfunction avgArr(arr) { if (!arr.length) return 0; return Math.floor(arr.reduce(function(a,b){return a+b;}, 0) / arr.length); }\nconst respTimesToday = contactsToday.map(function(c){ return c.responseTimeSec; }).filter(function(t){ return t !== null; });\nconst respTimes7d = contacts7d.map(function(c){ return c.responseTimeSec; }).filter(function(t){ return t !== null; });\nconst respTimes30d = contacts30d.map(function(c){ return c.responseTimeSec; }).filter(function(t){ return t !== null; });\nconst avgRespToday = avgArr(respTimesToday);\nconst avgResp7d = avgArr(respTimes7d);\nconst avgResp30d = avgArr(respTimes30d);\n\nconst offers30d = offersEnriched.filter(function(o){ const created = o.requestCreatedAtMs || o.offerCreatedAtMs; return created >= thirtyDaysAgo.getTime(); });\nconst funilLeads = contacts30d.length;\nconst funilTriagem = offers30d.filter(function(o){ return o.type === 'request' || o.type === 'offer'; }).length;\nconst funilProposta = offers30d.filter(function(o){ return o.type === 'offer'; }).length;\nconst funilNegociacao = offers30d.filter(function(o){ return o.state === 'Open' && contains(o.status, 'negocia'); }).length;\nconst funilFechado = offersEnriched.filter(function(o){ return o.wonAtMs >= thirtyDaysAgo.getTime(); }).length;\nfunction rate(a, b) { return b > 0 ? a / b : 0; }\n\nfunction getCampaignInsight(campId) { for (let i = 0; i < insights.length; i++) { if (String(insights[i].campaign_id) === String(campId)) return insights[i]; } return null; }\nfunction matchesCampaign(c, campaignName) { const utm = c.utmCampaign || ''; return utm && (utm === campaignName || contains(campaignName, utm) || contains(utm, campaignName)); }\n\nconst campanhasOut = campaigns.map(function(c) { const ins = getCampaignInsight(c.id); const spend = ins ? toNumber(ins.spend) : 0; const impressions = ins ? toNumber(ins.impressions) : 0; const ctr = ins ? toNumber(ins.ctr) : 0; let conversasMeta = 0; if (ins && Array.isArray(ins.actions)) { for (let k = 0; k < ins.actions.length; k++) { const t = ins.actions[k].action_type; if (t === 'onsite_conversion.lead_grouped' || t === 'lead' || t === 'onsite_conversion.messaging_conversation_started_7d') { conversasMeta += toNumber(ins.actions[k].value); } } } const leadsRq = contactsWithResponse.filter(function(co){ return matchesCampaign(co, c.name); }); const offersWon = offersEnriched.filter(function(o){ return o.wonAtMs > 0 && leadsRq.some(function(co){ return co.id === o.customerId; }); }); const ticketSum = offersWon.reduce(function(s, o){ return s + (toNumber(o.totalPlannedPrice) || toNumber(o.customDealValue)); }, 0); const mqlCount = leadsRq.filter(function(co){ return offersEnriched.some(function(o){ return o.customerId === co.id && o.type === 'offer'; }); }).length; return { id: String(c.id), name: c.name, status: c.status, impressions: impressions, ctr: ctr, conversas_meta: conversasMeta, leads_reonic: leadsRq.length, cpl_real: leadsRq.length > 0 ? spend / leadsRq.length : 0, mql: mqlCount, cac: offersWon.length > 0 ? spend / offersWon.length : 0, ticket_medio_realizado: offersWon.length > 0 ? ticketSum / offersWon.length : 0, spend: spend }; });\n\nconst buckets = { ate_1min: 0, um_a_dez_min: 0, dez_a_sessenta_min: 0, uma_a_24h: 0, mais_de_24h: 0 };\nfor (let i = 0; i < contactsWithResponse.length; i++) { const t = contactsWithResponse[i].responseTimeSec; if (t === null) continue; if (t <= 60) buckets.ate_1min++; else if (t <= 600) buckets.um_a_dez_min++; else if (t <= 3600) buckets.dez_a_sessenta_min++; else if (t <= 86400) buckets.uma_a_24h++; else buckets.mais_de_24h++; }\n\nfunction maskPhone(p) { if (!p) return ''; const d = String(p).replace(/\\D/g, ''); if (d.length < 4) return '****'; const ddd = d.length >= 10 ? d.slice(0, 2) : '00'; return '(' + ddd + ') ****-' + d.slice(-4); }\nconst hallVergonha = contactsWithResponse.filter(function(c){ return !c.responded && (now.getTime() - c.createdAtMs) > 24*3600*1000; }).sort(function(a,b){ return a.createdAtMs - b.createdAtMs; }).slice(0, 10).map(function(c){ return { lead_id: String(c.id), nome: ((c.firstName || 'Lead') + ' ' + ((c.lastName || '').charAt(0) + '.')).trim(), telefone_mascarado: maskPhone(c.telephone || c.mobilePhone), origem: c.utmCampaign || 'Origem desconhecida', created_at: c.createdAt, hours_waiting: Math.floor((now.getTime() - c.createdAtMs) / 3600000) }; });\n\nconst saturacao = ads.map(function(a){ const freq = toNumber(a.frequency); const ctr7 = toNumber(a.ctr); let rec = 'ok'; if (freq > 3 && ctr7 < 0.6) rec = 'trocar'; else if (freq > 2.5) rec = 'monitor'; return { ad_id: String(a.ad_id || ''), ad_name: a.ad_name || '', campaign_name: a.campaign_name || '', frequency: freq, ctr_7d: ctr7, ctr_trend_pct: 0, cpl_7d: 0, cpl_trend_pct: 0, spend_total: toNumber(a.spend), recommendation: rec }; });\n\nconst nowIso = now.toISOString();\nconst cache = { meta: { generated_at: nowIso, next_refresh_at: new Date(now.getTime() + 30*60*1000).toISOString(), period: { start: thirtyDaysAgo.toISOString(), end: nowIso, label: 'Ultimos 30 dias' }, sources_status: { meta_ads: campaigns.length ? 'ok' : 'error', reonic: contacts.length ? 'ok' : 'error', last_meta_fetch: nowIso, last_reonic_fetch: nowIso } }, hero: { spend_today: Math.round(spendToday * 100) / 100, spend_today_delta_pct: Math.round(spendTodayDelta * 10) / 10, cpl_today: Math.round(cplToday * 100) / 100, cpl_7d_avg: Math.round(cpl7dAvg * 100) / 100, cpl_status: cplStatus, leads_today: contactsToday.length, leads_yesterday: contactsYesterday.length, avg_response_time_today_sec: avgRespToday }, funil: { leads: funilLeads, triagem: funilTriagem, proposta: funilProposta, negociacao: funilNegociacao, fechado: funilFechado, conversion_rates: { lead_to_triagem: rate(funilTriagem, funilLeads), triagem_to_proposta: rate(funilProposta, funilTriagem), proposta_to_negociacao: rate(funilNegociacao, funilProposta), negociacao_to_fechado: rate(funilFechado, funilNegociacao) }, benchmarks: { lead_to_triagem: 0.95, triagem_to_proposta: 0.40, proposta_to_negociacao: 0.60, negociacao_to_fechado: 0.30 } }, campanhas: campanhasOut, velocidade: { distribuicao: buckets, avg_response_today_sec: avgRespToday, avg_response_7d_sec: avgResp7d, avg_response_30d_sec: avgResp30d, hall_da_vergonha: hallVergonha }, mix_produto: null, saturacao: saturacao };\n\nconst staticData = $getWorkflowStaticData('global');\nstaticData.cache = cache;\nstaticData.cachedAt = nowIso;\nreturn [{ json: { ok: true, cached_at: nowIso, size_bytes: JSON.stringify(cache).length, leads_total: contacts.length, offers_total: offers.length } }];"
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "dashboard/revert",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-revert-dashboard",
+      "name": "Webhook GET /dashboard/revert",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        800
+      ],
+      "webhookId": "dashboard-revert-get"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item = $input.first().json;\nconst headers = item.headers || {};\nconst auth = headers.authorization || headers.Authorization || '';\nconst expected = 'Bearer ' + '7ecb432e6018daecd8b7fd8daf887c53434751939f9eaaa10523222d7acd3642';\nconst valid = auth === expected;\nconst sd = $getWorkflowStaticData('global');\nconst cache = sd.cache || null;\nconst cachedAt = sd.cachedAt || null;\nif (!valid) {\n  return [{ json: { _httpStatus: 401, _body: { ok: false, error: 'INVALID_TOKEN' } } }];\n}\nif (!cache) {\n  return [{ json: { _httpStatus: 503, _body: { ok: false, error: 'CACHE_REFRESHING', retry_after_sec: 30 } } }];\n}\nreturn [{ json: { _httpStatus: 200, _body: { ok: true, data: cache, cached_at: cachedAt } } }];"
+      },
+      "id": "code-validar-servir",
+      "name": "Validar Token e Servir Cache",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json._body }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Authorization, Content-Type"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-dynamic",
+      "name": "Respond JSON",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        680,
+        800
+      ]
+    }
+  ],
+  "connections": {
+    "Cron 30min": {
+      "main": [
+        [
+          {
+            "node": "Buscar Campanhas Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Campanhas Meta": {
+      "main": [
+        [
+          {
+            "node": "Buscar Insights Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Insights Meta": {
+      "main": [
+        [
+          {
+            "node": "Buscar Ads Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Ads Meta": {
+      "main": [
+        [
+          {
+            "node": "Buscar Contacts Reonic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Offers Reonic": {
+      "main": [
+        [
+          {
+            "node": "Calcular Metricas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Contacts Reonic": {
+      "main": [
+        [
+          {
+            "node": "Buscar Offers Reonic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook GET /dashboard/revert": {
+      "main": [
+        [
+          {
+            "node": "Validar Token e Servir Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Token e Servir Cache": {
+      "main": [
+        [
+          {
+            "node": "Respond JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": null,
+  "versionCounter": 28,
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-05-13T03:00:31.763Z",
+    "createdAt": "2026-05-13T03:00:31.763Z",
+    "versionId": "a1e8dc6b-246d-471c-9ea3-e6aefcd172a7",
+    "workflowId": "AJypFIeC4rMcs18P",
+    "nodes": [
+      {
+        "id": "745bb517-7d17-43dc-b9b1-759857c4b05e",
+        "name": "Cron 30min",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          240,
+          400
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 */30 * * * *"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "5210f0cc-450e-42f4-beaf-06515459d7aa",
+        "name": "Buscar Campanhas Meta",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          460,
+          400
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://graph.facebook.com/v23.0/act_608480425054965/campaigns",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "facebookGraphApi",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "fields",
+                "value": "id,name,status,objective,daily_budget"
+              },
+              {
+                "name": "filtering",
+                "value": "[{\"field\":\"effective_status\",\"operator\":\"IN\",\"value\":[\"ACTIVE\",\"PAUSED\"]}]"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "timeout": 15000
+          }
+        },
+        "retryOnFail": true,
+        "credentials": {
+          "facebookGraphApi": {
+            "id": "o1wmrboZIxR8mF8B",
+            "name": "Facebook Graph account"
+          }
+        }
+      },
+      {
+        "id": "35f881d5-8cac-4c69-8687-dff85144e171",
+        "name": "Buscar Insights Meta",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          680,
+          400
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://graph.facebook.com/v23.0/act_608480425054965/insights",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "facebookGraphApi",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "fields",
+                "value": "campaign_id,campaign_name,spend,impressions,reach,clicks,ctr,cpm,frequency,actions"
+              },
+              {
+                "name": "level",
+                "value": "campaign"
+              },
+              {
+                "name": "date_preset",
+                "value": "last_7d"
+              },
+              {
+                "name": "limit",
+                "value": "100"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "timeout": 15000
+          }
+        },
+        "retryOnFail": true,
+        "credentials": {
+          "facebookGraphApi": {
+            "id": "o1wmrboZIxR8mF8B",
+            "name": "Facebook Graph account"
+          }
+        }
+      },
+      {
+        "id": "19e4b6eb-5845-48e6-b32e-928906eb2d2a",
+        "name": "Buscar Ads Meta",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          900,
+          400
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://graph.facebook.com/v23.0/act_608480425054965/insights",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "facebookGraphApi",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "fields",
+                "value": "ad_id,ad_name,campaign_name,spend,impressions,reach,frequency,ctr,actions"
+              },
+              {
+                "name": "level",
+                "value": "ad"
+              },
+              {
+                "name": "date_preset",
+                "value": "last_7d"
+              },
+              {
+                "name": "limit",
+                "value": "200"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "timeout": 15000
+          }
+        },
+        "retryOnFail": true,
+        "credentials": {
+          "facebookGraphApi": {
+            "id": "o1wmrboZIxR8mF8B",
+            "name": "Facebook Graph account"
+          }
+        }
+      },
+      {
+        "id": "dd09118d-467c-4c67-bf75-76f7f0cc983d",
+        "name": "Buscar Contacts Reonic",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1120,
+          400
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.reonic.de/rest/v2/clients/29d4c1e4-d67a-4c89-99bb-8980f5bad9dc/contacts",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-authorization",
+                "value": "Basic MjlkNGMxZTQtZDY3YS00Yzg5LTk5YmItODk4MGY1YmFkOWRjOjQyYjgxZWFhODExNzRhMmE4NDVkNzNlM2MyOGE2ZTQ1YjljZjM3MDBhZTU0NDJjYWIxMzVjMmIwYjliMTFmNjc="
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "page",
+                "value": "1"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            },
+            "timeout": 15000
+          }
+        },
+        "retryOnFail": true
+      },
+      {
+        "id": "6eded207-2643-43e2-8da9-58da601b2dd0",
+        "name": "Buscar Offers Reonic",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1340,
+          400
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "https://api.reonic.de/rest/v2/clients/29d4c1e4-d67a-4c89-99bb-8980f5bad9dc/h360/offers",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-authorization",
+                "value": "Basic MjlkNGMxZTQtZDY3YS00Yzg5LTk5YmItODk4MGY1YmFkOWRjOjQyYjgxZWFhODExNzRhMmE4NDVkNzNlM2MyOGE2ZTQ1YjljZjM3MDBhZTU0NDJjYWIxMzVjMmIwYjliMTFmNjc="
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "page",
+                "value": "1"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json",
+                "neverError": true
+              }
+            },
+            "timeout": 15000
+          }
+        },
+        "retryOnFail": true
+      },
+      {
+        "id": "e10a0322-268a-48eb-9c4b-f4367fd67488",
+        "name": "Calcular Metricas",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1560,
+          400
+        ],
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const SP_OFFSET = -3 * 60 * 60 * 1000;\nconst now = new Date();\nconst nowSP = new Date(now.getTime() + SP_OFFSET);\nconst startOfTodaySP = new Date(nowSP); startOfTodaySP.setUTCHours(0,0,0,0);\nconst startOfYesterdaySP = new Date(startOfTodaySP); startOfYesterdaySP.setUTCDate(startOfYesterdaySP.getUTCDate() - 1);\nconst sevenDaysAgo = new Date(startOfTodaySP); sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);\nconst thirtyDaysAgo = new Date(startOfTodaySP); thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);\n\nfunction safeFirst(name) { try { return $(name).first().json; } catch (e) { return null; } }\nfunction safeAll(name) { try { return $(name).all().map(function(i){return i.json;}); } catch (e) { return []; } }\nfunction unwrap(rawAll, keys) {\n  if (!rawAll || rawAll.length === 0) return [];\n  if (rawAll.length === 1 && rawAll[0] && typeof rawAll[0] === 'object' && !Array.isArray(rawAll[0])) {\n    const o = rawAll[0];\n    for (let i = 0; i < keys.length; i++) { if (Array.isArray(o[keys[i]])) return o[keys[i]]; }\n    if (o.id) return [o];\n    return [];\n  }\n  return rawAll;\n}\nfunction toNumber(v) { const n = Number(v); return isFinite(n) ? n : 0; }\nfunction ms(iso) { return iso ? new Date(iso).getTime() : 0; }\nfunction lower(s) { return String(s || '').toLowerCase(); }\nfunction contains(s, sub) { return lower(s).indexOf(lower(sub)) !== -1; }\n\nconst campaignsPayload = safeFirst('Buscar Campanhas Meta');\nconst insightsPayload = safeFirst('Buscar Insights Meta');\nconst adsPayload = safeFirst('Buscar Ads Meta');\nconst campaigns = (campaignsPayload && Array.isArray(campaignsPayload.data)) ? campaignsPayload.data : [];\nconst insights = (insightsPayload && Array.isArray(insightsPayload.data)) ? insightsPayload.data : [];\nconst ads = (adsPayload && Array.isArray(adsPayload.data)) ? adsPayload.data : [];\n\nconst contacts = unwrap(safeAll('Buscar Contacts Reonic'), ['data','items','contacts','results']);\nconst offers = unwrap(safeAll('Buscar Offers Reonic'), ['results','data','items','offers']);\n\nconst contactsEnriched = contacts.map(function(c){ return Object.assign({}, c, { createdAtMs: ms(c.createdAt) }); });\nconst offersEnriched = offers.map(function(o){ return Object.assign({}, o, { customerId: (o.customer && o.customer.id) || null, requestCreatedAtMs: ms(o.requestCreatedAt), offerCreatedAtMs: ms(o.offerCreatedAt), wonAtMs: ms(o.wonAt), lostAtMs: ms(o.lostAt) }); });\n\nfunction firstResponseMs(contact) { const matching = offersEnriched.filter(function(o){ return o.customerId === contact.id; }); if (!matching.length) return 0; const reqTimes = matching.map(function(o){ return o.requestCreatedAtMs || o.offerCreatedAtMs; }).filter(function(t){ return t > 0; }); if (!reqTimes.length) return 0; return Math.min.apply(null, reqTimes); }\n\nconst contactsWithResponse = contactsEnriched.map(function(c){ const fr = firstResponseMs(c); return Object.assign({}, c, { firstResponseMs: fr, responded: fr > 0, responseTimeSec: fr > 0 ? Math.max(0, Math.floor((fr - c.createdAtMs)/1000)) : null }); });\n\nconst contactsToday = contactsWithResponse.filter(function(c){ return c.createdAtMs >= startOfTodaySP.getTime(); });\nconst contactsYesterday = contactsWithResponse.filter(function(c){ return c.createdAtMs >= startOfYesterdaySP.getTime() && c.createdAtMs < startOfTodaySP.getTime(); });\nconst contacts7d = contactsWithResponse.filter(function(c){ return c.createdAtMs >= sevenDaysAgo.getTime() && c.createdAtMs < startOfTodaySP.getTime(); });\nconst contacts30d = contactsWithResponse.filter(function(c){ return c.createdAtMs >= thirtyDaysAgo.getTime(); });\n\nconst totalSpend7d = insights.reduce(function(s, i){ return s + toNumber(i.spend); }, 0);\nconst spendToday = totalSpend7d / 7;\nconst spend7dAvg = totalSpend7d / 7;\nconst spendTodayDelta = spend7dAvg > 0 ? ((spendToday - spend7dAvg) / spend7dAvg) * 100 : 0;\nconst cplToday = contactsToday.length > 0 ? spendToday / contactsToday.length : 0;\nconst leads7dCount = contacts7d.length || 1;\nconst cpl7dAvg = totalSpend7d / leads7dCount;\nlet cplStatus = 'good';\nif (cplToday > 15) cplStatus = 'bad'; else if (cplToday > 10) cplStatus = 'warning';\n\nfunction avgArr(arr) { if (!arr.length) return 0; return Math.floor(arr.reduce(function(a,b){return a+b;}, 0) / arr.length); }\nconst respTimesToday = contactsToday.map(function(c){ return c.responseTimeSec; }).filter(function(t){ return t !== null; });\nconst respTimes7d = contacts7d.map(function(c){ return c.responseTimeSec; }).filter(function(t){ return t !== null; });\nconst respTimes30d = contacts30d.map(function(c){ return c.responseTimeSec; }).filter(function(t){ return t !== null; });\nconst avgRespToday = avgArr(respTimesToday);\nconst avgResp7d = avgArr(respTimes7d);\nconst avgResp30d = avgArr(respTimes30d);\n\nconst offers30d = offersEnriched.filter(function(o){ const created = o.requestCreatedAtMs || o.offerCreatedAtMs; return created >= thirtyDaysAgo.getTime(); });\nconst funilLeads = contacts30d.length;\nconst funilTriagem = offers30d.filter(function(o){ return o.type === 'request' || o.type === 'offer'; }).length;\nconst funilProposta = offers30d.filter(function(o){ return o.type === 'offer'; }).length;\nconst funilNegociacao = offers30d.filter(function(o){ return o.state === 'Open' && contains(o.status, 'negocia'); }).length;\nconst funilFechado = offersEnriched.filter(function(o){ return o.wonAtMs >= thirtyDaysAgo.getTime(); }).length;\nfunction rate(a, b) { return b > 0 ? a / b : 0; }\n\nfunction getCampaignInsight(campId) { for (let i = 0; i < insights.length; i++) { if (String(insights[i].campaign_id) === String(campId)) return insights[i]; } return null; }\nfunction matchesCampaign(c, campaignName) { const utm = c.utmCampaign || ''; return utm && (utm === campaignName || contains(campaignName, utm) || contains(utm, campaignName)); }\n\nconst campanhasOut = campaigns.map(function(c) { const ins = getCampaignInsight(c.id); const spend = ins ? toNumber(ins.spend) : 0; const impressions = ins ? toNumber(ins.impressions) : 0; const ctr = ins ? toNumber(ins.ctr) : 0; let conversasMeta = 0; if (ins && Array.isArray(ins.actions)) { for (let k = 0; k < ins.actions.length; k++) { const t = ins.actions[k].action_type; if (t === 'onsite_conversion.lead_grouped' || t === 'lead' || t === 'onsite_conversion.messaging_conversation_started_7d') { conversasMeta += toNumber(ins.actions[k].value); } } } const leadsRq = contactsWithResponse.filter(function(co){ return matchesCampaign(co, c.name); }); const offersWon = offersEnriched.filter(function(o){ return o.wonAtMs > 0 && leadsRq.some(function(co){ return co.id === o.customerId; }); }); const ticketSum = offersWon.reduce(function(s, o){ return s + (toNumber(o.totalPlannedPrice) || toNumber(o.customDealValue)); }, 0); const mqlCount = leadsRq.filter(function(co){ return offersEnriched.some(function(o){ return o.customerId === co.id && o.type === 'offer'; }); }).length; return { id: String(c.id), name: c.name, status: c.status, impressions: impressions, ctr: ctr, conversas_meta: conversasMeta, leads_reonic: leadsRq.length, cpl_real: leadsRq.length > 0 ? spend / leadsRq.length : 0, mql: mqlCount, cac: offersWon.length > 0 ? spend / offersWon.length : 0, ticket_medio_realizado: offersWon.length > 0 ? ticketSum / offersWon.length : 0, spend: spend }; });\n\nconst buckets = { ate_1min: 0, um_a_dez_min: 0, dez_a_sessenta_min: 0, uma_a_24h: 0, mais_de_24h: 0 };\nfor (let i = 0; i < contactsWithResponse.length; i++) { const t = contactsWithResponse[i].responseTimeSec; if (t === null) continue; if (t <= 60) buckets.ate_1min++; else if (t <= 600) buckets.um_a_dez_min++; else if (t <= 3600) buckets.dez_a_sessenta_min++; else if (t <= 86400) buckets.uma_a_24h++; else buckets.mais_de_24h++; }\n\nfunction maskPhone(p) { if (!p) return ''; const d = String(p).replace(/\\D/g, ''); if (d.length < 4) return '****'; const ddd = d.length >= 10 ? d.slice(0, 2) : '00'; return '(' + ddd + ') ****-' + d.slice(-4); }\nconst hallVergonha = contactsWithResponse.filter(function(c){ return !c.responded && (now.getTime() - c.createdAtMs) > 24*3600*1000; }).sort(function(a,b){ return a.createdAtMs - b.createdAtMs; }).slice(0, 10).map(function(c){ return { lead_id: String(c.id), nome: ((c.firstName || 'Lead') + ' ' + ((c.lastName || '').charAt(0) + '.')).trim(), telefone_mascarado: maskPhone(c.telephone || c.mobilePhone), origem: c.utmCampaign || 'Origem desconhecida', created_at: c.createdAt, hours_waiting: Math.floor((now.getTime() - c.createdAtMs) / 3600000) }; });\n\nconst saturacao = ads.map(function(a){ const freq = toNumber(a.frequency); const ctr7 = toNumber(a.ctr); let rec = 'ok'; if (freq > 3 && ctr7 < 0.6) rec = 'trocar'; else if (freq > 2.5) rec = 'monitor'; return { ad_id: String(a.ad_id || ''), ad_name: a.ad_name || '', campaign_name: a.campaign_name || '', frequency: freq, ctr_7d: ctr7, ctr_trend_pct: 0, cpl_7d: 0, cpl_trend_pct: 0, spend_total: toNumber(a.spend), recommendation: rec }; });\n\nconst nowIso = now.toISOString();\nconst cache = { meta: { generated_at: nowIso, next_refresh_at: new Date(now.getTime() + 30*60*1000).toISOString(), period: { start: thirtyDaysAgo.toISOString(), end: nowIso, label: 'Ultimos 30 dias' }, sources_status: { meta_ads: campaigns.length ? 'ok' : 'error', reonic: contacts.length ? 'ok' : 'error', last_meta_fetch: nowIso, last_reonic_fetch: nowIso } }, hero: { spend_today: Math.round(spendToday * 100) / 100, spend_today_delta_pct: Math.round(spendTodayDelta * 10) / 10, cpl_today: Math.round(cplToday * 100) / 100, cpl_7d_avg: Math.round(cpl7dAvg * 100) / 100, cpl_status: cplStatus, leads_today: contactsToday.length, leads_yesterday: contactsYesterday.length, avg_response_time_today_sec: avgRespToday }, funil: { leads: funilLeads, triagem: funilTriagem, proposta: funilProposta, negociacao: funilNegociacao, fechado: funilFechado, conversion_rates: { lead_to_triagem: rate(funilTriagem, funilLeads), triagem_to_proposta: rate(funilProposta, funilTriagem), proposta_to_negociacao: rate(funilNegociacao, funilProposta), negociacao_to_fechado: rate(funilFechado, funilNegociacao) }, benchmarks: { lead_to_triagem: 0.95, triagem_to_proposta: 0.40, proposta_to_negociacao: 0.60, negociacao_to_fechado: 0.30 } }, campanhas: campanhasOut, velocidade: { distribuicao: buckets, avg_response_today_sec: avgRespToday, avg_response_7d_sec: avgResp7d, avg_response_30d_sec: avgResp30d, hall_da_vergonha: hallVergonha }, mix_produto: null, saturacao: saturacao };\n\nconst staticData = $getWorkflowStaticData('global');\nstaticData.cache = cache;\nstaticData.cachedAt = nowIso;\nreturn [{ json: { ok: true, cached_at: nowIso, size_bytes: JSON.stringify(cache).length, leads_total: contacts.length, offers_total: offers.length } }];"
+        }
+      },
+      {
+        "parameters": {
+          "httpMethod": "GET",
+          "path": "dashboard/revert",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "wh-revert-dashboard",
+        "name": "Webhook GET /dashboard/revert",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          240,
+          800
+        ],
+        "webhookId": "dashboard-revert-get"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "language": "javaScript",
+          "jsCode": "const item = $input.first().json;\nconst headers = item.headers || {};\nconst auth = headers.authorization || headers.Authorization || '';\nconst expected = 'Bearer ' + '7ecb432e6018daecd8b7fd8daf887c53434751939f9eaaa10523222d7acd3642';\nconst valid = auth === expected;\nconst sd = $getWorkflowStaticData('global');\nconst cache = sd.cache || null;\nconst cachedAt = sd.cachedAt || null;\nif (!valid) {\n  return [{ json: { _httpStatus: 401, _body: { ok: false, error: 'INVALID_TOKEN' } } }];\n}\nif (!cache) {\n  return [{ json: { _httpStatus: 503, _body: { ok: false, error: 'CACHE_REFRESHING', retry_after_sec: 30 } } }];\n}\nreturn [{ json: { _httpStatus: 200, _body: { ok: true, data: cache, cached_at: cachedAt } } }];"
+        },
+        "id": "code-validar-servir",
+        "name": "Validar Token e Servir Cache",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          460,
+          800
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ $json._body }}",
+          "options": {
+            "responseCode": 200,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                },
+                {
+                  "name": "Access-Control-Allow-Methods",
+                  "value": "GET, OPTIONS"
+                },
+                {
+                  "name": "Access-Control-Allow-Headers",
+                  "value": "Authorization, Content-Type"
+                },
+                {
+                  "name": "Cache-Control",
+                  "value": "no-store"
+                }
+              ]
+            }
+          }
+        },
+        "id": "respond-dynamic",
+        "name": "Respond JSON",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          680,
+          800
+        ]
+      }
+    ],
+    "connections": {
+      "Cron 30min": {
+        "main": [
+          [
+            {
+              "node": "Buscar Campanhas Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Campanhas Meta": {
+        "main": [
+          [
+            {
+              "node": "Buscar Insights Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Insights Meta": {
+        "main": [
+          [
+            {
+              "node": "Buscar Ads Meta",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Ads Meta": {
+        "main": [
+          [
+            {
+              "node": "Buscar Contacts Reonic",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Offers Reonic": {
+        "main": [
+          [
+            {
+              "node": "Calcular Metricas",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Buscar Contacts Reonic": {
+        "main": [
+          [
+            {
+              "node": "Buscar Offers Reonic",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook GET /dashboard/revert": {
+        "main": [
+          [
+            {
+              "node": "Validar Token e Servir Cache",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validar Token e Servir Cache": {
+        "main": [
+          [
+            {
+              "node": "Respond JSON",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Cleiton Frizon",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-05-13T03:00:31.913Z",
+        "id": 72,
+        "workflowId": "AJypFIeC4rMcs18P",
+        "versionId": "a1e8dc6b-246d-471c-9ea3-e6aefcd172a7",
+        "event": "deactivated",
+        "userId": "d3e9e707-0af1-404c-938b-0f0a8393a615"
+      },
+      {
+        "createdAt": "2026-05-13T03:00:31.998Z",
+        "id": 73,
+        "workflowId": "AJypFIeC4rMcs18P",
+        "versionId": "a1e8dc6b-246d-471c-9ea3-e6aefcd172a7",
+        "event": "activated",
+        "userId": "d3e9e707-0af1-404c-938b-0f0a8393a615"
+      },
+      {
+        "createdAt": "2026-05-13T03:00:37.441Z",
+        "id": 74,
+        "workflowId": "AJypFIeC4rMcs18P",
+        "versionId": "a1e8dc6b-246d-471c-9ea3-e6aefcd172a7",
+        "event": "deactivated",
+        "userId": "d3e9e707-0af1-404c-938b-0f0a8393a615"
+      },
+      {
+        "createdAt": "2026-05-13T03:00:37.507Z",
+        "id": 75,
+        "workflowId": "AJypFIeC4rMcs18P",
+        "versionId": "a1e8dc6b-246d-471c-9ea3-e6aefcd172a7",
+        "event": "activated",
+        "userId": "d3e9e707-0af1-404c-938b-0f0a8393a615"
+      }
+    ]
+  }
+}
