@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Header } from './shared/Header';
 import { Footer } from './shared/Footer';
+import { ShortcutsOverlay } from './shared/ShortcutsOverlay';
 import { PeriodFilter } from './PeriodFilter';
 import { BlocoA_Hero } from './BlocoA_Hero';
 import { BlocoB_Funil } from './BlocoB_Funil';
@@ -10,6 +11,7 @@ import { BlocoE_Mix } from './BlocoE_Mix';
 import { BlocoF_Saturacao } from './BlocoF_Saturacao';
 import { BlocoG_GoogleAds } from './BlocoG_GoogleAds';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { googleAdsSampleFixture } from '@/lib/fixtures/googleAdsSample';
 import type { PeriodPreset } from '@/lib/types';
 
@@ -38,6 +40,7 @@ function readStoredPeriod(): PeriodPreset {
 export function DashboardContainer() {
   const { data, loading, error, refresh } = useDashboardData();
   const [period, setPeriod] = useState<PeriodPreset>(readStoredPeriod);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -46,6 +49,16 @@ export function DashboardContainer() {
       // ver readStoredPeriod
     }
   }, [period]);
+
+  useKeyboardShortcuts({
+    onRefresh: refresh,
+    onPeriodHoje: useCallback(() => setPeriod('hoje'), []),
+    onPeriod7d: useCallback(() => setPeriod('7d'), []),
+    onPeriod30d: useCallback(() => setPeriod('30d'), []),
+    onPeriodMes: useCallback(() => setPeriod('mes_atual'), []),
+    onToggleHelp: useCallback(() => setHelpOpen((v) => !v), []),
+    onCloseHelp: useCallback(() => setHelpOpen(false), []),
+  });
 
   const isGooglePreview = useMemo(() => {
     if (typeof window === 'undefined') return false;
@@ -129,7 +142,8 @@ export function DashboardContainer() {
           </div>
         </div>
       </main>
-      <Footer />
+      <Footer onOpenShortcuts={() => setHelpOpen(true)} />
+      <ShortcutsOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }
