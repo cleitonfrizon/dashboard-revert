@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Header } from './shared/Header';
 import { Footer } from './shared/Footer';
 import { PeriodFilter } from './PeriodFilter';
@@ -10,6 +10,7 @@ import { BlocoE_Mix } from './BlocoE_Mix';
 import { BlocoF_Saturacao } from './BlocoF_Saturacao';
 import { BlocoG_GoogleAds } from './BlocoG_GoogleAds';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { googleAdsSampleFixture } from '@/lib/fixtures/googleAdsSample';
 import type { PeriodPreset } from '@/lib/types';
 
 const PERIOD_LABELS: Record<PeriodPreset, string> = {
@@ -22,6 +23,19 @@ const PERIOD_LABELS: Record<PeriodPreset, string> = {
 export function DashboardContainer() {
   const { data, loading, error, refresh } = useDashboardData();
   const [period, setPeriod] = useState<PeriodPreset>('30d');
+
+  const isGooglePreview = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('preview') === 'google';
+  }, []);
+
+  const googleAdsBlock = isGooglePreview
+    ? googleAdsSampleFixture
+    : data?.google_ads ?? null;
+
+  const googleAdsStatus = isGooglePreview
+    ? 'ok'
+    : data?.meta.sources_status.google_ads ?? 'not_configured';
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -74,10 +88,15 @@ export function DashboardContainer() {
           </div>
 
           <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-4">
+            {isGooglePreview && (
+              <div className="text-[10px] uppercase tracking-[0.2em] text-gold/60 border border-gold/20 bg-gold/5 px-3 py-1.5 rounded">
+                Preview com dados sintéticos · remova ?preview=google da URL pra ver o estado real
+              </div>
+            )}
             <BlocoG_GoogleAds
-              data={data?.google_ads ?? null}
-              loading={loading}
-              sourceStatus={data?.meta.sources_status.google_ads ?? 'not_configured'}
+              data={googleAdsBlock}
+              loading={loading && !isGooglePreview}
+              sourceStatus={googleAdsStatus}
             />
           </div>
         </div>

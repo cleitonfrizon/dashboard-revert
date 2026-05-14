@@ -1,0 +1,38 @@
+{
+  "_description": "Nó Code 'Buscar Google Ads' — pronto pra colar no workflow AJypFIeC4rMcs18P entre 'Buscar Ads Meta' e 'Buscar Contacts Reonic'. NÃO importar este JSON inteiro: copiar o node abaixo e adicionar ao workflow existente via PATCH na API n8n. O jsCode usa $env (envs do n8n, NÃO do container) e está self-contained — sem dependências externas além de this.helpers.httpRequest.",
+  "_pre_requisitos": [
+    "Envs configuradas no n8n: GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET, GOOGLE_ADS_REFRESH_TOKEN, GOOGLE_ADS_DEVELOPER_TOKEN, GOOGLE_ADS_MCC_ID, GOOGLE_ADS_CUSTOMER_ID",
+    "Patchar 'Calcular Metricas' depois (ver docs/n8n-workflows/calcular-metricas-google-patch.md)",
+    "Reconectar 'Buscar Ads Meta' -> 'Buscar Google Ads' -> 'Buscar Contacts Reonic'"
+  ],
+  "node": {
+    "id": "code-google-ads-fetch",
+    "name": "Buscar Google Ads",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [1340, 400],
+    "parameters": {
+      "mode": "runOnceForAllItems",
+      "language": "javaScript",
+      "jsCode": "// === Buscar Google Ads ===\n// Renova access_token via refresh_token e roda 2 queries GAQL (30d + 7d) na customer Revert.\n// Retorna SEMPRE 1 item com { campanhas, totals, customer_id, error? } pra Calcular Metricas usar com safeFirst().\n// Em caso de falha NÃO quebra o pipeline — retorna error preenchido e cache.google_ads herda 'error'.\n\nfunction env(k) { return process.env[k] || ''; }\nconst clientId = env('GOOGLE_ADS_CLIENT_ID');\nconst clientSecret = env('GOOGLE_ADS_CLIENT_SECRET');\nconst refreshToken = env('GOOGLE_ADS_REFRESH_TOKEN');\nconst devToken = env('GOOGLE_ADS_DEVELOPER_TOKEN');\nconst mccId = env('GOOGLE_ADS_MCC_ID');\nconst customerId = env('GOOGLE_ADS_CUSTOMER_ID');\nconst API_VERSION = 'v17';\n\n// Curto-circuito: se qualquer env faltar -> sinaliza not_configured pra frontend\nconst missing = [];\nif (!clientId) missing.push('GOOGLE_ADS_CLIENT_ID');\nif (!clientSecret) missing.push('GOOGLE_ADS_CLIENT_SECRET');\nif (!refreshToken) missing.push('GOOGLE_ADS_REFRESH_TOKEN');\nif (!devToken) missing.push('GOOGLE_ADS_DEVELOPER_TOKEN');\nif (!mccId) missing.push('GOOGLE_ADS_MCC_ID');\nif (!customerId) missing.push('GOOGLE_ADS_CUSTOMER_ID');\n\nif (missing.length) {\n  return [{ json: { campanhas: [], totals: { spend_7d: 0, spend_30d: 0, conversions_7d: 0, conversions_30d: 0 }, customer_id: customerId || '', status: 'not_configured', missing_envs: missing } }];\n}\n\nasync function refreshAccessToken() {\n  const res = await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://oauth2.googleapis.com/token',\n    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },\n    body: 'client_id=' + encodeURIComponent(clientId) + '&client_secret=' + encodeURIComponent(clientSecret) + '&refresh_token=' + encodeURIComponent(refreshToken) + '&grant_type=refresh_token',\n    json: true,\n    timeout: 15000,\n  });\n  if (!res || !res.access_token) throw new Error('OAuth response missing access_token: ' + JSON.stringify(res || {}).slice(0, 200));\n  return res.access_token;\n}\n\nasync function runGaql(accessToken, query) {\n  const url = 'https://googleads.googleapis.com/' + API_VERSION + '/customers/' + customerId + '/googleAds:searchStream';\n  const res = await this.helpers.httpRequest({\n    method: 'POST',\n    url: url,\n    headers: {\n      Authorization: 'Bearer ' + accessToken,\n      'developer-token': devToken,\n      'login-customer-id': mccId,\n      'Content-Type': 'application/json',\n    },\n    body: { query: query },\n    json: true,\n    timeout: 20000,\n  });\n  // searchStream retorna ARRAY de chunks; cada chunk tem results[]\n  const chunks = Array.isArray(res) ? res : [res];\n  const rows = [];\n  for (let i = 0; i < chunks.length; i++) {\n    const r = chunks[i] && Array.isArray(chunks[i].results) ? chunks[i].results : [];\n    for (let j = 0; j < r.length; j++) rows.push(r[j]);\n  }\n  return rows;\n}\n\nfunction flattenRow(r) {\n  const c = r.campaign || {};\n  const m = r.metrics || {};\n  return {\n    id: String(c.id || ''),\n    name: String(c.name || ''),\n    status: String(c.status || 'UNKNOWN'),\n    spend: Number(m.costMicros || 0) / 1000000,\n    impressions: Number(m.impressions || 0),\n    clicks: Number(m.clicks || 0),\n    ctr: Number(m.ctr || 0),\n    conversions: Number(m.conversions || 0),\n    cost_per_conversion: Number(m.costPerConversion || 0) / 1000000,\n  };\n}\n\nfunction sumBy(arr, key) { return arr.reduce(function(s, x){ return s + (Number(x[key]) || 0); }, 0); }\n\nconst QUERY_30D = 'SELECT campaign.id, campaign.name, campaign.status, metrics.cost_micros, metrics.impressions, metrics.clicks, metrics.ctr, metrics.conversions, metrics.cost_per_conversion FROM campaign WHERE segments.date DURING LAST_30_DAYS AND campaign.status IN (\"ENABLED\", \"PAUSED\") ORDER BY metrics.cost_micros DESC LIMIT 50';\nconst QUERY_7D = 'SELECT campaign.id, metrics.cost_micros, metrics.conversions FROM campaign WHERE segments.date DURING LAST_7_DAYS AND campaign.status IN (\"ENABLED\", \"PAUSED\")';\n\ntry {\n  const accessToken = await refreshAccessToken.call(this);\n  const rows30 = await runGaql.call(this, accessToken, QUERY_30D);\n  const rows7 = await runGaql.call(this, accessToken, QUERY_7D);\n  const campanhas = rows30.map(flattenRow);\n  // Agregação 7d por id pra usar nos totals\n  const map7 = {};\n  for (let i = 0; i < rows7.length; i++) {\n    const id = String((rows7[i].campaign && rows7[i].campaign.id) || '');\n    const m = rows7[i].metrics || {};\n    if (!map7[id]) map7[id] = { spend: 0, conversions: 0 };\n    map7[id].spend += Number(m.costMicros || 0) / 1000000;\n    map7[id].conversions += Number(m.conversions || 0);\n  }\n  const totals7 = Object.values(map7).reduce(function(s, x){ return { spend: s.spend + x.spend, conversions: s.conversions + x.conversions }; }, { spend: 0, conversions: 0 });\n  const out = {\n    campanhas: campanhas,\n    totals: {\n      spend_7d: Math.round(totals7.spend * 100) / 100,\n      spend_30d: Math.round(sumBy(campanhas, 'spend') * 100) / 100,\n      conversions_7d: Math.round(totals7.conversions * 100) / 100,\n      conversions_30d: Math.round(sumBy(campanhas, 'conversions') * 100) / 100,\n    },\n    customer_id: customerId,\n    status: 'ok',\n  };\n  return [{ json: out }];\n} catch (err) {\n  return [{ json: {\n    campanhas: [],\n    totals: { spend_7d: 0, spend_30d: 0, conversions_7d: 0, conversions_30d: 0 },\n    customer_id: customerId,\n    status: 'error',\n    error_message: String(err && err.message ? err.message : err).slice(0, 500),\n  } }];\n}"
+    }
+  },
+  "_connections_patch": {
+    "_descricao": "Após inserir o node, atualizar connections do workflow assim:",
+    "Buscar Ads Meta": {
+      "main": [
+        [{ "node": "Buscar Google Ads", "type": "main", "index": 0 }]
+      ]
+    },
+    "Buscar Google Ads": {
+      "main": [
+        [{ "node": "Buscar Contacts Reonic", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "_validacao": {
+    "manual_via_curl": "curl -X POST https://oauth2.googleapis.com/token -d 'client_id=$ID&client_secret=$SECRET&refresh_token=$RT&grant_type=refresh_token' (deve retornar access_token de 1h)",
+    "execucao_manual_no_n8n": "Após inserir node, clicar 'Execute node' isoladamente — deve retornar 1 item com campanhas[] preenchido e status:'ok'",
+    "fallback_esperado": "Se algo der errado, item retornado tem status:'error' com error_message, e o pipeline continua (Calcular Metricas tolera isso)"
+  }
+}
