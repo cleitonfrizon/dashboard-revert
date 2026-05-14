@@ -354,12 +354,113 @@ function parseNoteToUtm(note) {
 
 | ID | Pendência | Owner | Status |
 |---|---|---|---|
-| Q-1 | Confirmar enum de `status` no Reonic | Cleiton durante Story 1.1 | ⏳ |
-| Q-2 | Existe `firstContactAt`? Fallback para `updatedAt` | Cleiton durante Story 1.1 | ⏳ |
-| Q-3 | Endpoint exato de Offers | Cleiton durante Story 1.1 | ⏳ |
+| Q-1 | Confirmar enum de `status` no Reonic | Cleiton durante Story 1.1 | ✅ ADR-029 |
+| Q-2 | Existe `firstContactAt`? Fallback para `updatedAt` | Cleiton durante Story 1.1 | ✅ ADR-029 |
+| Q-3 | Endpoint exato de Offers | Cleiton durante Story 1.1 | ✅ ADR-029 |
 | Q-4 | Campo de produto no Reonic | Robson + Cleiton | ⏳ (não bloqueia v1) |
 | Q-5 | Critério objetivo de MQL | Robson | ⏳ (placeholder em uso) |
+| Q-6 | MCC ID + customer_id da Revert no Google Ads | Cleiton + Robson | ⏳ Story 2.1 |
+| Q-7 | Tag de conversão Google Ads + UTMs `google_ads` no GTM | Cleiton + Robson | ⏳ Story 2.1 |
 
 ---
 
-*Data schema v1.0 — atualizado conforme execução das stories*
+## 9. Google Ads (Story 2.1 — em discovery)
+
+### 9.1 Endpoint base
+
+```
+POST https://googleads.googleapis.com/v17/customers/{customerId}/googleAds:searchStream
+Authorization: Bearer {oauth_access_token}
+developer-token: {developer_token}
+login-customer-id: {mcc_id}
+Content-Type: application/json
+```
+
+### 9.2 Credenciais necessárias
+
+| Item | Onde obter | Owner |
+|---|---|---|
+| `developer_token` | https://ads.google.com/aw/apicenter (Tools → API Center) | Cleiton (MCC Escala) |
+| `client_id` + `client_secret` | console.cloud.google.com → OAuth 2.0 Client IDs | Cleiton (GCP Escala) |
+| `refresh_token` | OAuth flow uma vez (scope `https://www.googleapis.com/auth/adwords`, access_type=offline, prompt=consent) | Cleiton (gera 1x e armazena) |
+| `mcc_id` (login-customer-id) | Painel MCC Escala (10 dígitos, sem traços) | Cleiton |
+| `customer_id` da Revert | Conta da Revert dentro do MCC | Robson confirma vinculação |
+
+### 9.3 GAQL queries propostas
+
+**Campanhas + métricas 30d** (single request):
+```sql
+SELECT
+  campaign.id,
+  campaign.name,
+  campaign.status,
+  metrics.cost_micros,
+  metrics.impressions,
+  metrics.clicks,
+  metrics.ctr,
+  metrics.conversions,
+  metrics.cost_per_conversion
+FROM campaign
+WHERE segments.date DURING LAST_30_DAYS
+  AND campaign.status = 'ENABLED'
+ORDER BY metrics.cost_micros DESC
+LIMIT 50
+```
+
+**Conversões por ação** (se houver mais de 1 tag — segunda fase):
+```sql
+SELECT
+  conversion_action.id,
+  conversion_action.name,
+  metrics.conversions,
+  metrics.cost_micros
+FROM conversion_action
+WHERE segments.date DURING LAST_30_DAYS
+```
+
+### 9.4 Schema do cache
+
+Adicionado a `cache.google_ads`:
+
+```typescript
+google_ads?: {
+  customer_id: string,
+  campanhas: Array<{
+    id: string,
+    name: string,
+    status: string,
+    spend: number,             // metrics.cost_micros / 1_000_000
+    impressions: number,
+    clicks: number,
+    ctr: number,               // metrics.ctr (0..1)
+    conversions: number,
+    cost_per_conversion: number,
+    leads_reonic: number,      // match via utmSource=google + utmCampaign
+    cpl_real: number,          // spend / leads_reonic
+  }>,
+  totals: {
+    spend_7d: number,
+    spend_30d: number,
+    conversions_7d: number,
+    conversions_30d: number,
+  }
+}
+```
+
+E em `cache.meta.sources_status`:
+```typescript
+google_ads?: 'ok' | 'stale' | 'error' | 'not_configured'
+last_google_fetch?: string
+```
+
+### 9.5 Match Google Ads ↔ Reonic
+
+Mesmo padrão usado para Meta:
+- `contact.utmSource === 'google'` (ou `'google_ads'` — confirmar no GTM via Q-7)
+- `contact.utmCampaign` cruza com `campaign.name` (igual, contém, ou contém-no)
+
+Robson + Cleiton precisam validar **Q-7** (que existem UTMs `google_ads` no GTM da Revert) antes da Story sair de discovery.
+
+---
+
+*Data schema v1.1 — Q-1/Q-2/Q-3 resolvidas via ADR-029; Google Ads adicionado em discovery (Story 2.1)*

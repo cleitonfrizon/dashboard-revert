@@ -119,8 +119,17 @@
 - [x] **Hover dourado refinado nos cards**: `.card-escala:hover` agora tem border-gold/40 + box-shadow dourado sutil (transition 300ms)
 - [x] **Fade-in stagger nos blocos**: animação `fade-in-up` (0.5s) com stagger 50ms→280ms entre os 4 grupos do dashboard
 
+### 🟢 Sprint 2 — Google Ads discovery (parte 5 da sessão 13/05)
+
+- [x] **Story 2.1** criada (`docs/stories/2.1.story.md`): plano completo de credenciais (6 envs), GAQL queries, alterações no workflow n8n, pseudo-código do node "Buscar Google Ads", match UTM Reonic, plano de execução por fase, riscos e decisões pendentes
+- [x] **data-schema.md v1.1**: Q-1/Q-2/Q-3 fechadas via ADR-029; Q-6 (MCC + customer_id) e Q-7 (UTMs no GTM) abertas; seção §9 detalha Google Ads (endpoint, credenciais, GAQL, schema, match)
+- [x] **types.ts**: `GoogleAdsBlock` + `GoogleAdsCampaignRow` adicionados; `DashboardCache.google_ads` opcional; `sources_status.google_ads` opcional com estado `'not_configured'`
+- [x] **Bloco G placeholder em produção**: `BlocoG_GoogleAds.tsx` renderiza EmptyState "Aguardando configuração" enquanto `sources_status.google_ads === 'not_configured'`. Quando dados chegarem, mostra totais (spend 30d, conversões 30d) + tabela top 8 campanhas com CPL real (match via UTM Reonic)
+- [x] Bundle `index-CMFigSI4.js` (258 KB / 85 KB gzip — antes 255/85)
+- [ ] **PENDENTE pro Cleiton**: aplicar pelo developer_token Google Ads (1-2 dias de aprovação), criar OAuth client no GCP, capturar refresh_token, e me devolver 6 envs (`GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_ADS_MCC_ID`, `GOOGLE_ADS_CUSTOMER_ID`). Detalhamento em `docs/stories/2.1.story.md`
+
 ### 🟢 Sprint 2 — ainda pendente
-- [ ] Google Ads (PRD seção 11 roadmap) — requer credenciais Google Ads (developer token + OAuth + customer_id)
+- [ ] Google Ads execução (após credenciais — 3h de trabalho)
 - [ ] Magic link auth — bloqueado: nenhum workflow do n8n tem SMTP configurado. Requer credencial externa (Gmail/Resend/Mailgun) ou pivotar para Magic Link via WhatsApp/Zaia
 - [ ] Observability no n8n: enviar erros do workflow pro Sentry via HTTP Request (depende do DSN configurado)
 - [ ] **Sentry DSN**: criar projeto em sentry.io e adicionar `VITE_SENTRY_DSN` no Vercel

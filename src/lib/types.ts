@@ -13,8 +13,10 @@ export interface CacheMeta {
   sources_status: {
     meta_ads: SourceStatus;
     reonic: SourceStatus;
+    google_ads?: SourceStatus | 'not_configured';
     last_meta_fetch: string;
     last_reonic_fetch: string;
+    last_google_fetch?: string;
   };
 }
 
@@ -112,6 +114,31 @@ export interface SaturacaoRow {
   recommendation: SaturationRecommendation;
 }
 
+export interface GoogleAdsCampaignRow {
+  id: string;
+  name: string;
+  status: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  conversions: number;
+  cost_per_conversion: number;
+  leads_reonic: number;
+  cpl_real: number;
+}
+
+export interface GoogleAdsBlock {
+  customer_id: string;
+  campanhas: GoogleAdsCampaignRow[];
+  totals: {
+    spend_7d: number;
+    spend_30d: number;
+    conversions_7d: number;
+    conversions_30d: number;
+  };
+}
+
 export interface DashboardCache {
   meta: CacheMeta;
   hero: HeroBlock;
@@ -120,6 +147,7 @@ export interface DashboardCache {
   velocidade: VelocidadeBlock;
   mix_produto: MixProdutoRow[] | null;
   saturacao: SaturacaoRow[];
+  google_ads?: GoogleAdsBlock | null;
 }
 
 export interface DashboardResponse {

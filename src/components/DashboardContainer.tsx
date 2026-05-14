@@ -8,6 +8,7 @@ import { BlocoC_Campanhas } from './BlocoC_Campanhas';
 import { BlocoD_Velocidade } from './BlocoD_Velocidade';
 import { BlocoE_Mix } from './BlocoE_Mix';
 import { BlocoF_Saturacao } from './BlocoF_Saturacao';
+import { BlocoG_GoogleAds } from './BlocoG_GoogleAds';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import type { PeriodPreset } from '@/lib/types';
 
@@ -70,6 +71,14 @@ export function DashboardContainer() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-3">
             <BlocoD_Velocidade data={data?.velocidade ?? null} loading={loading} />
             <BlocoF_Saturacao data={data?.saturacao ?? null} loading={loading} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-4">
+            <BlocoG_GoogleAds
+              data={data?.google_ads ?? null}
+              loading={loading}
+              sourceStatus={data?.meta.sources_status.google_ads ?? 'not_configured'}
+            />
           </div>
         </div>
       </main>
