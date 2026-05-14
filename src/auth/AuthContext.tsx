@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { addBreadcrumb } from '@/lib/sentry';
 
 const SESSION_KEY = 'revert-dashboard-session';
 
@@ -50,6 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
       );
       setAuthenticated(true);
+      addBreadcrumb({ category: 'auth', message: 'login_ok' });
+    } else {
+      addBreadcrumb({ category: 'auth', message: 'login_failed', level: 'warning' });
     }
     return ok;
   }, []);
@@ -57,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     sessionStorage.removeItem(SESSION_KEY);
     setAuthenticated(false);
+    addBreadcrumb({ category: 'auth', message: 'logout' });
   }, []);
 
   const value = useMemo(() => ({ authenticated, login, logout, loading }), [authenticated, login, logout, loading]);

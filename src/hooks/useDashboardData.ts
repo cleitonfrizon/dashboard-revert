@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchDashboard, DashboardApiError } from '@/lib/api';
-import { captureException } from '@/lib/sentry';
+import { addBreadcrumb, captureException } from '@/lib/sentry';
 import type { DashboardCache } from '@/lib/types';
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
@@ -26,15 +26,32 @@ export function useDashboardData(): DashboardState {
     abortRef.current = ctrl;
     setLoading(true);
     setError(null);
+    const startedAt = performance.now();
     try {
       const cache = await fetchDashboard(ctrl.signal);
       if (ctrl.signal.aborted) return;
       setData(cache);
       setFetchedAt(new Date());
+      addBreadcrumb({
+        category: 'data.fetch',
+        message: 'dashboard_fetch_ok',
+        data: {
+          duration_ms: Math.round(performance.now() - startedAt),
+          generated_at: cache.meta?.generated_at,
+          sources: cache.meta?.sources_status,
+        },
+      });
     } catch (err) {
       if (ctrl.signal.aborted) return;
       const isExpectedApiError =
         err instanceof DashboardApiError && (err.code === 'CACHE_REFRESHING' || err.code === 'INVALID_TOKEN');
+      const code = err instanceof DashboardApiError ? err.code : 'unknown';
+      addBreadcrumb({
+        category: 'data.fetch',
+        message: 'dashboard_fetch_error',
+        level: isExpectedApiError ? 'warning' : 'error',
+        data: { code, duration_ms: Math.round(performance.now() - startedAt) },
+      });
       if (!isExpectedApiError) {
         captureException(err, { hook: 'useDashboardData' });
       }

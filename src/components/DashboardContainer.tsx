@@ -13,6 +13,7 @@ import { BlocoG_GoogleAds } from './BlocoG_GoogleAds';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { googleAdsSampleFixture } from '@/lib/fixtures/googleAdsSample';
+import { addBreadcrumb } from '@/lib/sentry';
 import type { PeriodPreset } from '@/lib/types';
 
 const PERIOD_LABELS: Record<PeriodPreset, string> = {
@@ -48,15 +49,29 @@ export function DashboardContainer() {
     } catch {
       // ver readStoredPeriod
     }
+    addBreadcrumb({ category: 'ui.period', message: 'period_changed', data: { period } });
   }, [period]);
 
+  const handleRefresh = useCallback(
+    (source: 'manual' | 'shortcut' | 'header' = 'manual') => {
+      addBreadcrumb({ category: 'ui.action', message: 'refresh', data: { source } });
+      refresh();
+    },
+    [refresh]
+  );
+
   useKeyboardShortcuts({
-    onRefresh: refresh,
+    onRefresh: useCallback(() => handleRefresh('shortcut'), [handleRefresh]),
     onPeriodHoje: useCallback(() => setPeriod('hoje'), []),
     onPeriod7d: useCallback(() => setPeriod('7d'), []),
     onPeriod30d: useCallback(() => setPeriod('30d'), []),
     onPeriodMes: useCallback(() => setPeriod('mes_atual'), []),
-    onToggleHelp: useCallback(() => setHelpOpen((v) => !v), []),
+    onToggleHelp: useCallback(() => {
+      setHelpOpen((v) => {
+        addBreadcrumb({ category: 'ui.shortcut', message: v ? 'help_closed' : 'help_opened' });
+        return !v;
+      });
+    }, []),
     onCloseHelp: useCallback(() => setHelpOpen(false), []),
   });
 
@@ -78,7 +93,7 @@ export function DashboardContainer() {
       <Header
         generatedAt={data?.meta.generated_at}
         sourcesStatus={data?.meta.sources_status ?? null}
-        onRefresh={refresh}
+        onRefresh={() => handleRefresh('header')}
         loading={loading}
       />
       <main className="flex-1 container mx-auto px-4 lg:px-8 py-8">

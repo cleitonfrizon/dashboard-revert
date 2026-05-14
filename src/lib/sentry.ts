@@ -27,4 +27,24 @@ export const captureException = (err: unknown, context?: Record<string, unknown>
   Sentry.captureException(err, context ? { extra: context } : undefined);
 };
 
+export type BreadcrumbCategory =
+  | 'ui.action'
+  | 'ui.period'
+  | 'ui.filter'
+  | 'ui.shortcut'
+  | 'data.fetch'
+  | 'auth';
+
+export interface BreadcrumbOptions {
+  category: BreadcrumbCategory;
+  message: string;
+  data?: Record<string, unknown>;
+  level?: 'info' | 'warning' | 'error';
+}
+
+export function addBreadcrumb({ category, message, data, level = 'info' }: BreadcrumbOptions) {
+  if (!dsn) return; // no-op silencioso — não polui console
+  Sentry.addBreadcrumb({ category, message, data, level });
+}
+
 export const SentryErrorBoundary = Sentry.ErrorBoundary;

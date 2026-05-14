@@ -5,6 +5,7 @@ import { formatBRL, formatInt, formatPct } from '@/lib/formatters';
 import { Card } from './shared/Card';
 import { TableSkeleton } from './shared/TableSkeleton';
 import { EmptyState } from './shared/EmptyState';
+import { addBreadcrumb } from '@/lib/sentry';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -128,7 +129,10 @@ export function BlocoC_Campanhas({ data, loading }: Props) {
                 key={opt}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setChannelFilter(opt)}
+                onClick={() => {
+                  setChannelFilter(opt);
+                  addBreadcrumb({ category: 'ui.filter', message: 'channel_filter', data: { value: opt } });
+                }}
                 className={cn(
                   'px-3 py-1 text-xs uppercase tracking-wider rounded border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60',
                   active
