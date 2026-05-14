@@ -62,7 +62,12 @@ export function DashboardContainer() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      <Header generatedAt={data?.meta.generated_at} onRefresh={refresh} loading={loading} />
+      <Header
+        generatedAt={data?.meta.generated_at}
+        sourcesStatus={data?.meta.sources_status ?? null}
+        onRefresh={refresh}
+        loading={loading}
+      />
       <main className="flex-1 container mx-auto px-4 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
           <div>

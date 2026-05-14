@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react';
 import { LogOut, RefreshCw } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/formatters';
 import { useAuth } from '@/hooks/useAuth';
+import { SourceStatusPills } from './SourceStatusPills';
+import type { CacheMeta } from '@/lib/types';
 
 export interface HeaderProps {
   generatedAt: string | null | undefined;
+  sourcesStatus?: CacheMeta['sources_status'] | null;
   onRefresh: () => void;
   loading?: boolean;
 }
 
-export function Header({ generatedAt, onRefresh, loading }: HeaderProps) {
+export function Header({ generatedAt, sourcesStatus, onRefresh, loading }: HeaderProps) {
   const { logout } = useAuth();
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -35,6 +38,7 @@ export function Header({ generatedAt, onRefresh, loading }: HeaderProps) {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <SourceStatusPills sourcesStatus={sourcesStatus} />
           <div className="hidden md:flex flex-col items-end text-xs text-gray-500 leading-tight">
             <span className="uppercase tracking-wider">Atualizado</span>
             <span className="text-gold">{formatRelativeTime(generatedAt)}</span>
