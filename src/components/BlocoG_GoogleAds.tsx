@@ -1,6 +1,7 @@
 import type { GoogleAdsBlock } from '@/lib/types';
 import { Card } from './shared/Card';
 import { EmptyState } from './shared/EmptyState';
+import { TableSkeleton } from './shared/TableSkeleton';
 import { formatBRL, formatInt, formatPct } from '@/lib/formatters';
 import { Search } from 'lucide-react';
 
@@ -14,7 +15,7 @@ export function BlocoG_GoogleAds({ data, loading, sourceStatus }: Props) {
   if (loading && !data) {
     return (
       <Card tag="Google Ads">
-        <div className="h-40 w-full animate-pulse bg-navyLight/40 rounded" />
+        <TableSkeleton rows={5} columns={5} />
       </Card>
     );
   }
@@ -25,7 +26,21 @@ export function BlocoG_GoogleAds({ data, loading, sourceStatus }: Props) {
         <EmptyState
           icon={<Search size={32} />}
           title="Aguardando configuração"
-          description="Conta Google Ads ainda não conectada. Story 2.1 detalha o setup: developer token, OAuth do MCC e customer_id da Revert."
+          description="Conta Google Ads ainda não conectada. Quando ligar, este bloco mostra spend 30d, conversões 30d e top 8 campanhas com CPL real (match Reonic via UTM)."
+          hint="Setup em ~5min · docs/guides/google-ads-oauth-setup.md"
+        />
+      </Card>
+    );
+  }
+
+  if (sourceStatus === 'error') {
+    return (
+      <Card tag="Google Ads">
+        <EmptyState
+          icon={<Search size={32} />}
+          title="Falha ao consultar a API"
+          description="O n8n não conseguiu autenticar na Google Ads na última execução. Próximo cron (30min) tenta de novo. Se persistir, refazer OAuth flow."
+          hint={`customer ${data?.customer_id || '—'}`}
         />
       </Card>
     );
@@ -38,6 +53,7 @@ export function BlocoG_GoogleAds({ data, loading, sourceStatus }: Props) {
           icon={<Search size={32} />}
           title="Sem campanhas ativas"
           description={`Customer ${data.customer_id} conectado, mas nenhuma campanha retornou dados nos últimos 30 dias.`}
+          hint="Verificar status ENABLED/PAUSED na conta"
         />
       </Card>
     );

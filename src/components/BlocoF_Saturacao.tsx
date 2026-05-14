@@ -1,7 +1,7 @@
 import type { SaturacaoRow } from '@/lib/types';
 import { formatBRL, formatPct } from '@/lib/formatters';
 import { Card } from './shared/Card';
-import { Skeleton } from './shared/Skeleton';
+import { TableSkeleton } from './shared/TableSkeleton';
 import { EmptyState } from './shared/EmptyState';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +20,7 @@ export function BlocoF_Saturacao({ data, loading }: Props) {
   if (loading && !data) {
     return (
       <Card tag="Saturação Criativa" className="xl:col-span-3">
-        <Skeleton className="h-48 w-full" />
+        <TableSkeleton rows={5} columns={6} />
       </Card>
     );
   }
@@ -29,7 +29,8 @@ export function BlocoF_Saturacao({ data, loading }: Props) {
       <Card tag="Saturação Criativa" className="xl:col-span-3">
         <EmptyState
           title="Coletando dados"
-          description="A análise de saturação ficará disponível conforme o histórico de impressões cresce. Mínimo 7 dias de dados (ADR-022)."
+          description="Sem anúncios ativos retornando impressões nos últimos 7 dias. Tendências CTR/CPL e recomendação de troca aparecem quando há histórico suficiente."
+          hint="Mínimo 7 dias de execução · ADR-022"
         />
       </Card>
     );

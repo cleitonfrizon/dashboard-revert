@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import type { AdChannel, CampanhaRow } from '@/lib/types';
 import { formatBRL, formatInt, formatPct } from '@/lib/formatters';
 import { Card } from './shared/Card';
-import { Skeleton } from './shared/Skeleton';
+import { TableSkeleton } from './shared/TableSkeleton';
 import { EmptyState } from './shared/EmptyState';
 import { cn } from '@/lib/utils';
 
@@ -90,7 +90,7 @@ export function BlocoC_Campanhas({ data, loading }: Props) {
   if (loading && !data) {
     return (
       <Card tag="Performance por Campanha" className="xl:col-span-3">
-        <Skeleton className="h-48 w-full" />
+        <TableSkeleton rows={6} columns={8} />
       </Card>
     );
   }
