@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 interface Props {
   data: FunilBlock | null;
   loading: boolean;
+  periodLabel?: string;
 }
 
 interface Stage {
@@ -43,7 +44,7 @@ function statusColor(rate: number, benchmark: number): 'good' | 'warning' | 'bad
   return 'bad';
 }
 
-export function BlocoB_Funil({ data, loading }: Props) {
+export function BlocoB_Funil({ data, loading, periodLabel }: Props) {
   if (loading && !data) {
     return (
       <Card tag="Funil de Conversão">
@@ -57,7 +58,7 @@ export function BlocoB_Funil({ data, loading }: Props) {
 
   return (
     <Card tag="Funil de Conversão" className="xl:col-span-2">
-      <h2 className="font-display text-xl text-white mb-4">Últimos 30 dias</h2>
+      <h2 className="font-display text-xl text-white mb-4">{periodLabel ?? 'Últimos 30 dias'}</h2>
       <div className="space-y-4">
         {STAGES.map((stage, idx) => {
           const value = data[stage.key] as number;

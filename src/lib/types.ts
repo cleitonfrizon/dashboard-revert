@@ -142,6 +142,15 @@ export interface GoogleAdsBlock {
   };
 }
 
+export interface PeriodSlice {
+  hero: HeroBlock;
+  funil: FunilBlock;
+  campanhas: CampanhaRow[];
+  velocidade: VelocidadeBlock;
+  period_label: string;
+  spend_total?: number;
+}
+
 export interface DashboardCache {
   meta: CacheMeta;
   hero: HeroBlock;
@@ -151,6 +160,7 @@ export interface DashboardCache {
   mix_produto: MixProdutoRow[] | null;
   saturacao: SaturacaoRow[];
   google_ads?: GoogleAdsBlock | null;
+  by_period?: Record<PeriodPreset, PeriodSlice>;
 }
 
 export interface DashboardResponse {

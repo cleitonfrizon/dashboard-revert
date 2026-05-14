@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 interface Props {
   data: CampanhaRow[] | null;
   loading: boolean;
+  periodLabel?: string;
 }
 
 type SortKey = keyof Pick<
@@ -49,7 +50,7 @@ function ChannelPill({ channel }: { channel: AdChannel }) {
   );
 }
 
-export function BlocoC_Campanhas({ data, loading }: Props) {
+export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('spend');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
@@ -116,7 +117,7 @@ export function BlocoC_Campanhas({ data, loading }: Props) {
   const showFilter = channels.size > 1;
 
   return (
-    <Card tag="Performance por Campanha" className="xl:col-span-3">
+    <Card tag={`Performance por Campanha · ${periodLabel ?? 'Últimos 7 dias'}`} className="xl:col-span-3">
       {showFilter && (
         <div role="group" aria-label="Filtrar por canal" className="flex items-center gap-2 mb-3">
           <span className="text-[11px] uppercase tracking-wider text-gray-500">Canal:</span>

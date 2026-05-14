@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 interface Props {
   data: VelocidadeBlock | null;
   loading: boolean;
+  periodLabel?: string;
 }
 
 const BUCKETS: Array<{ key: keyof VelocidadeBlock['distribuicao']; label: string; tone: 'good' | 'warning' | 'bad' }> = [
@@ -25,7 +26,7 @@ const TONE_BG = {
   bad: 'bg-danger',
 };
 
-export function BlocoD_Velocidade({ data, loading }: Props) {
+export function BlocoD_Velocidade({ data, loading, periodLabel }: Props) {
   if (loading && !data) {
     return (
       <Card tag="Velocidade Comercial" className="xl:col-span-2">
@@ -42,7 +43,7 @@ export function BlocoD_Velocidade({ data, loading }: Props) {
     <Card tag="Velocidade Comercial" className="xl:col-span-2">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <h2 className="font-display text-xl text-white mb-4">Distribuição do tempo de resposta</h2>
+          <h2 className="font-display text-xl text-white mb-4">Tempo de resposta · {periodLabel ?? 'Todos os períodos'}</h2>
           {!hasData ? (
             <EmptyState
               title="Nenhum lead com tempo de resposta registrado"

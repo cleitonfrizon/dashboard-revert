@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 interface BlocoAProps {
   data: HeroBlock | null;
   loading: boolean;
+  periodLabel?: string;
 }
 
 interface HeroCardProps {
@@ -35,7 +36,7 @@ function HeroCard({ label, value, delta, deltaTone = 'neutral', icon }: HeroCard
   );
 }
 
-export function BlocoA_Hero({ data, loading }: BlocoAProps) {
+export function BlocoA_Hero({ data, loading, periodLabel }: BlocoAProps) {
   if (loading && !data) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -62,35 +63,35 @@ export function BlocoA_Hero({ data, loading }: BlocoAProps) {
   return (
     <section>
       <div className="flex items-baseline gap-3 mb-4">
-        <span className="section-tag">Hero do Dia</span>
+        <span className="section-tag">Hero · {periodLabel ?? 'Hoje'}</span>
         <span className="text-xs text-gray-500">Snapshot operacional · São Paulo</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <HeroCard
-          label="Verba hoje"
+          label="Verba"
           value={formatBRL(data.spend_today)}
-          delta={`${formatDelta(spendDelta)} vs média 7d`}
+          delta={`${formatDelta(spendDelta)} vs período anterior`}
           deltaTone={spendDelta < 0 ? 'good' : spendDelta > 20 ? 'bad' : 'neutral'}
           icon={<Zap size={18} />}
         />
         <HeroCard
-          label="CPL hoje"
+          label="CPL"
           value={formatBRL(data.cpl_today)}
-          delta={`Média 7d ${formatBRL(data.cpl_7d_avg)}`}
+          delta={`Período anterior ${formatBRL(data.cpl_7d_avg)}`}
           deltaTone={cplStatusColor}
           icon={data.cpl_status === 'good' ? <TrendingDown size={18} /> : <TrendingUp size={18} />}
         />
         <HeroCard
-          label="Leads hoje"
+          label="Leads"
           value={formatInt(data.leads_today)}
-          delta={`Ontem ${formatInt(data.leads_yesterday)} · ${formatDelta(leadsDelta)}`}
+          delta={`Anterior ${formatInt(data.leads_yesterday)} · ${formatDelta(leadsDelta)}`}
           deltaTone={leadsDelta >= 0 ? 'good' : 'bad'}
           icon={<Users size={18} />}
         />
         <HeroCard
-          label="Resposta média hoje"
+          label="Resposta média"
           value={formatDuration(data.avg_response_time_today_sec)}
-          delta={data.avg_response_time_today_sec > 0 ? 'Lead → 1º contato' : 'Aguardando primeiro lead'}
+          delta={data.avg_response_time_today_sec > 0 ? 'Lead → 1º contato' : 'Sem lead no período'}
           deltaTone={
             data.avg_response_time_today_sec === 0
               ? 'neutral'

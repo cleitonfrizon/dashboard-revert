@@ -88,6 +88,12 @@ export function DashboardContainer() {
     ? 'ok'
     : data?.meta.sources_status.google_ads ?? 'not_configured';
 
+  const slice = data?.by_period?.[period] ?? null;
+  const heroData = slice?.hero ?? data?.hero ?? null;
+  const funilData = slice?.funil ?? data?.funil ?? null;
+  const campanhasData = slice?.campanhas ?? data?.campanhas ?? null;
+  const velocidadeData = slice?.velocidade ?? data?.velocidade ?? null;
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <Header
@@ -126,20 +132,20 @@ export function DashboardContainer() {
 
         <div className="space-y-6">
           <div className="animate-fade-in-up">
-            <BlocoA_Hero data={data?.hero ?? null} loading={loading} />
+            <BlocoA_Hero data={heroData} loading={loading} periodLabel={PERIOD_LABELS[period]} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-1">
-            <BlocoB_Funil data={data?.funil ?? null} loading={loading} />
+            <BlocoB_Funil data={funilData} loading={loading} periodLabel={PERIOD_LABELS[period]} />
             <BlocoE_Mix data={data?.mix_produto ?? null} loading={loading} />
           </div>
 
           <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-2">
-            <BlocoC_Campanhas data={data?.campanhas ?? null} loading={loading} />
+            <BlocoC_Campanhas data={campanhasData} loading={loading} periodLabel={PERIOD_LABELS[period]} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-3">
-            <BlocoD_Velocidade data={data?.velocidade ?? null} loading={loading} />
+            <BlocoD_Velocidade data={velocidadeData} loading={loading} periodLabel={PERIOD_LABELS[period]} />
             <BlocoF_Saturacao data={data?.saturacao ?? null} loading={loading} />
           </div>
 
