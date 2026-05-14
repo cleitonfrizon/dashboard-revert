@@ -1,8 +1,15 @@
 # Execution Report — Dashboard de BI Revert
 
-**Data:** 2026-05-13
-**Status:** ✅ SUCCESS — MVP em produção
-**Tag:** `v1.0.0-mvp` (criada localmente; push pendente — ver Pendências)
+**Última atualização:** 2026-05-13
+**Status produção:** ✅ Operacional (HTTP 200)
+**Tag MVP:** `v1.0.0-mvp` (12/05/2026)
+**Último commit em main:** `f2643bb` (13/05/2026)
+
+---
+
+## Resumo executivo
+
+O MVP foi entregue em **12/05/2026** após uma sessão única de execução (10 stories, R$ 0 de custo extra além das R$ 150-300 de API). Em **13/05/2026** uma segunda sessão entregou seis blocos de evolução pós-MVP: correção crítica de senha em produção, rotação de credenciais sensíveis, robustez de dados (paginação Reonic + Meta API v25.0 + HTTP status codes), observabilidade via Sentry, polimento de UX e preparação completa para Google Ads. Total de **6 commits no main, todos validados em produção**.
 
 ---
 
@@ -10,39 +17,149 @@
 
 | Recurso | URL | Status |
 |---|---|---|
-| Dashboard custom domain | https://dashboard.escalanegociosdigitais.com.br | ✅ HTTP 200 |
+| Dashboard | https://dashboard.escalanegociosdigitais.com.br | ✅ HTTP 200 |
 | Alias Vercel | https://dashboard-revert.vercel.app | ✅ HTTP 200 |
-| API webhook n8n | https://n8n.escalanegociosdigitais.com.br/webhook/dashboard/revert | ✅ Bearer + CORS restrito |
-| Repositório GitHub | https://github.com/cleitonfrizon/dashboard-revert | ⚠️ commits locais, push pendente |
-| Workflow n8n | https://n8n.escalanegociosdigitais.com.br/workflow/AJypFIeC4rMcs18P | ✅ active=true |
-| Projeto Vercel | escalanegociosdigitais-3508/dashboard-revert | ✅ deploy prod ativo |
+| Webhook n8n | https://n8n.escalanegociosdigitais.com.br/webhook/dashboard/revert | ✅ Bearer + CORS restrito |
+| Repositório | https://github.com/cleitonfrizon/dashboard-revert | ✅ sincronizado |
+| Workflow n8n | `AJypFIeC4rMcs18P` (Revert Dashboard) | ✅ active=true, cron `0 */30 * * * *` |
+| Projeto Vercel | `escalanegociosdigitais-3508/dashboard-revert` | ✅ deploy prod ativo |
 
 ---
 
-## Stories
+## Sprint 1 — MVP (12/05/2026)
 
-| Story | Status | Notas |
+10 stories entregues em uma sessão. Todas as 7 perguntas do critério de aceite respondíveis em 30 segundos no dashboard.
+
+| Story | Status | Observação |
 |---|---|---|
-| 1.1 Aggregator n8n | Done | Consolidado com 1.2; tempo médio execução 9s; 3 execuções consecutivas OK |
-| 1.2 Endpoint REST | Done | Webhook GET com Bearer; CORS restrito ao domínio próprio |
-| 1.3 Setup Vite + Auth Shell | Done | bcrypt + sessionStorage; build 238 KB JS gzip 79 KB |
-| 1.4 Bloco A — Hero | Done | 4 cards com semáforo CPL + delta vs 7d |
-| 1.5 Bloco B — Funil | Done | 5 etapas + taxas vs benchmark com semáforo |
-| 1.6 Bloco C — Campanhas | Done | Tabela ordenável + totalizador |
-| 1.7 Bloco D — Velocidade | Done | 5 buckets + Hall da Vergonha + médias 30d |
-| 1.8 Bloco E — Mix | Done-Partial | EmptyState aguardando Q-4 (Robson) |
-| 1.9 Bloco F — Saturação | Done-Partial | Tabela ativa, tendências CTR/CPL zeradas até 7d+ histórico |
-| 1.10 Deploy prod + domínio + CORS | Done | dashboard.escalanegociosdigitais.com.br no ar; CORS restrito |
+| 1.1 Aggregator n8n | ✅ Done | Consolidado com 1.2; tempo médio execução ~9s |
+| 1.2 Endpoint REST | ✅ Done | Webhook GET com Bearer; CORS restrito |
+| 1.3 Setup Vite + Auth Shell | ✅ Done | bcrypt + sessionStorage |
+| 1.4 Bloco A — Hero | ✅ Done | 4 cards com semáforo CPL + delta vs 7d |
+| 1.5 Bloco B — Funil | ✅ Done | 5 etapas + benchmark |
+| 1.6 Bloco C — Campanhas | ✅ Done | Tabela ordenável + totalizador |
+| 1.7 Bloco D — Velocidade | ✅ Done | 5 buckets + Hall da Vergonha + médias 30d |
+| 1.8 Bloco E — Mix | ⏳ Done-Partial | EmptyState aguardando Q-4 (Robson) |
+| 1.9 Bloco F — Saturação | ⏳ Done-Partial | Ativo, tendências CTR/CPL zeradas até 7d+ histórico |
+| 1.10 Deploy prod + domínio + CORS | ✅ Done | Custom domain ativo |
 
 ---
 
-## Decisões adicionadas durante a execução
+## Sprint 2 — Evolução pós-MVP (13/05/2026)
+
+Sessão única que entregou 6 blocos de melhorias em sequência. Cada bloco gerou 1 commit em main, todos validados em produção antes do próximo.
+
+### 1. Correção crítica de senha (commit `9e8b05d`)
+
+**Sintoma:** Dashboard rejeitava qualquer senha como "incorreta" mesmo após rotação.
+
+**Causa raiz:** As variáveis `VITE_*` (HASH/API_URL/API_TOKEN) nunca foram adicionadas no Vercel via `vercel env add`. Como `VITE_*` é inlineado pelo Vite em **build-time**, o bundle saiu sem hash, e `bcrypt.compareSync(senha, undefined)` retorna `false` para qualquer entrada. Bug #9 da tabela.
+
+**Fix aplicado:**
+- `vercel env add VITE_DASHBOARD_PASSWORD_HASH production` + URL + TOKEN
+- `vercel --prod` regerou bundle com hash inlineado
+- Logo PNG oficial 1440×1440 (`public/escala-logo.png`) substituiu o SVG fallback
+- `Header.tsx` + `LoginPage.tsx` apontando pro `.png`
+
+### 2. Rotação de credenciais (commit incluído em `9e8b05d`)
+
+Tokens expostos no chat foram trocados ainda durante a sessão:
+
+| Credencial | Onde | Ação |
+|---|---|---|
+| `DASHBOARD_API_TOKEN` (Bearer do webhook) | n8n (jsCode do node `Validar Token e Servir Cache`) + Vercel env | Novo token 64-char hex; cache n8n atualizado via PATCH na API; bundle frontend regerado |
+| Senha do dashboard | Hash bcrypt(10) em `VITE_DASHBOARD_PASSWORD_HASH` | Nova senha 22-char gerada; substituída no Vercel + redeploy |
+
+Validação: token velho retorna HTTP 401 `INVALID_TOKEN`, token novo retorna `ok:true`. Senha velha não autentica mais.
+
+### 3. Robustez de dados (commit `289244d`)
+
+Três fixes técnicos em sequência no workflow `AJypFIeC4rMcs18P`:
+
+**3.1 HTTP status codes corretos no webhook (resolve ADR-031)**
+
+`Respond JSON.options.responseCode` virou expressão dinâmica `={{ $json._httpStatus }}`. Agora o webhook retorna HTTP 401 com token inválido (era 200 antes) e HTTP 503 quando cache ausente (cold start).
+
+**3.2 Paginação Reonic — `/contacts` e `/h360/offers`**
+
+Nodes `Buscar Contacts Reonic` e `Buscar Offers Reonic` migrados de `httpRequest` para `code` com loop `for (page = 1..50)` até resposta vazia. Header correto da Reonic: `x-authorization` (não `Authorization` — daí o "There is no Authentication header" enganoso em testes manuais).
+
+| Endpoint | Antes (1 página) | Depois (paginado) |
+|---|---|---|
+| `/contacts` | 100 itens | **234 itens** |
+| `/h360/offers` | 100 itens | **234 itens** |
+| `funil.leads` no cache | 21 | **49** |
+
+**3.3 Meta Graph API v23.0 → v25.0**
+
+3 nodes Meta (`Campanhas`, `Insights`, `Ads`) com URL atualizada antes da deprecação. Execução 354 validou (11 campanhas, 2 insights, 14 ads).
+
+**Bug operacional descoberto:** PUT no workflow via API n8n **sobrescreve `staticData`** se enviado no payload. Solução: omitir `staticData` do payload de PUT preserva o cache em runtime.
+
+### 4. Observabilidade — Sentry frontend (commit `37fc677`)
+
+| Componente | Função |
+|---|---|
+| `src/lib/sentry.ts` | Helper `initSentry()`, `captureException()`, `SentryErrorBoundary` |
+| `main.tsx` | `<SentryErrorBoundary>` envolvendo `<App />` com FallbackUI estilizado (gold/black + botão "Tentar novamente") |
+| `useDashboardData.ts` | `captureException` em erros inesperados (ignora `CACHE_REFRESHING`/`INVALID_TOKEN` — fluxo esperado) |
+| `beforeSend` | Remove header `Authorization` antes de enviar pro Sentry |
+| Config | `sendDefaultPii: false`, `tracesSampleRate: 0.1` em produção |
+
+Sem `VITE_SENTRY_DSN`, todo o SDK é **no-op gracioso** (erros caem em `console.error`). Pendente: você criar projeto em sentry.io e setar a env.
+
+### 5. Polimento UX (commit `b3e8d29`)
+
+| Mudança | Onde | Efeito |
+|---|---|---|
+| Tick de 30s | `Header.tsx` | "há X min" atualiza sozinho — não fica parado após o load |
+| Hover dourado refinado | `.card-escala:hover` (CSS) | Border passa de `gold/20` → `gold/40` + glow sutil; transition 300ms |
+| Fade-in stagger | `DashboardContainer.tsx` + `index.css` | Os 4 grupos de blocos surgem em cascata (50/120/200/280 ms) no mount |
+
+### 6. Preparação Google Ads (commits `41a65b3` e `f2643bb`)
+
+**6.1 Discovery (commit `41a65b3`)**
+- `docs/stories/2.1.story.md` — plano completo (6 credenciais Google Ads, GAQL queries, pseudo-código n8n, match UTM Reonic, riscos, plano por fase)
+- `docs/data-schema.md` v1.1 — seção §9 Google Ads + Q-6 (MCC + customer_id) e Q-7 (UTMs no GTM) abertas
+- `types.ts` — `GoogleAdsBlock` + `GoogleAdsCampaignRow`; `DashboardCache.google_ads` opcional; `sources_status.google_ads` com estado `'not_configured'`
+- `BlocoG_GoogleAds.tsx` — placeholder em produção: `EmptyState "Aguardando configuração"` enquanto `not_configured`. Quando dados chegarem, mostra totais (spend 30d, conversões 30d) + tabela top 8 com CPL real (match UTM Reonic)
+
+**6.2 Coluna Canal no Bloco C (commit `f2643bb`)**
+- `AdChannel` type (`'meta' | 'google'`) e `channel?: AdChannel` em `CampanhaRow`
+- `ChannelPill` no Bloco C: pill azul para Meta, amarelo para Google
+- Filtro Todos/Meta/Google **progressivo** — só aparece quando há > 1 canal nos dados
+- Patch `Calcular Metricas` via API n8n: `channel: 'meta'` em todos os items de `campanhasOut`
+- Cache validado: 11 campanhas com `channel: 'meta'`
+
+Quando Google Ads ligar via Story 2.1, basta o workflow popular `channel: 'google'` que o filtro aparece automaticamente sem código adicional no frontend.
+
+---
+
+## Métricas antes/depois (sessão 13/05)
+
+| Métrica | Antes | Depois |
+|---|---|---|
+| Contacts Reonic puxados | 100 (cap) | **234** |
+| Offers Reonic puxados | 100 (cap) | **234** |
+| `funil.leads` no dashboard | 21 | **49** |
+| HTTP status quando token errado | 200 (com `ok:false`) | **401** |
+| Meta Graph API | v23.0 | **v25.0** |
+| Bundle frontend | 238 KB / 79 KB gzip | **260 KB / 86 KB gzip** |
+| Observability frontend | nenhuma | **Sentry SDK ativo (no-op até DSN)** |
+| Logo | SVG fallback | **PNG oficial 1440×1440** |
+| Canais visíveis no Bloco C | implícito (só Meta) | **Pill explícito + filtro progressivo** |
+| Pendências críticas 🔴 | 2 (logo, push GitHub) | **0** |
+| Pendências 🟢 do MVP | 8 | **3 (todas dependem de credencial externa)** |
+
+---
+
+## Decisões (ADRs)
 
 | ID | Decisão | Motivo |
 |---|---|---|
 | ADR-029 | Schema Reonic real (Q-1/Q-2/Q-3 resolvidas) | `data-schema.md` original estava desalinhado com a API real (`/contacts` + `/h360/offers`, status PT-BR custom) |
-| ADR-030 | Cache em `workflow.staticData.global` (substitui ADR-003) | Filesystem n8n é read-only (`/tmp` e `/home/node/.n8n` ambos rejeitaram write) — consolidou Aggregator + API em 1 workflow |
-| ADR-031 | Logo fallback SVG + paginação Reonic adiada | escalanegociosdigitais.com.br/logo.png retornou 404; paginação fica para Sprint 2 |
+| ADR-030 | Cache em `workflow.staticData.global` (substitui ADR-003) | Filesystem n8n é read-only — consolidou Aggregator + API em 1 workflow |
+| ADR-031 | Logo SVG fallback + paginação Reonic adiada | Ambos resolvidos na sessão 13/05 |
 
 ---
 
@@ -50,121 +167,78 @@
 
 | # | Problema | Causa | Fix |
 |---|---|---|---|
-| 1 | `Credentials not found` na 1ª execução | Vercel SDK criou nodes Meta sem credential vinculada | PATCH na API n8n adicionando `{facebookGraphApi: {id: o1wmrboZIxR8mF8B}}` aos 3 nodes Meta |
-| 2 | Reonic `/h360/requests` → 404 | Schema esperado errado em `data-schema.md` | Migrou para `/contacts` + `/h360/offers`; ADR-029 |
+| 1 | `Credentials not found` na 1ª execução | Vercel SDK criou nodes Meta sem credential vinculada | PATCH na API n8n adicionando `facebookGraphApi.id` aos 3 nodes |
+| 2 | Reonic `/h360/requests` → 404 | Schema esperado errado | Migrou para `/contacts` + `/h360/offers`; ADR-029 |
 | 3 | `/tmp/...` não writable | Sandbox do n8n | Migrou para `workflow.staticData`; ADR-030 |
 | 4 | `n8n SDK validate` rejeitou `.join('\n')` | Security guard do parser | Substituiu por concatenação `+` |
-| 5 | Regex no jsCode patch removeu `campaigns/insights/ads` | Pattern gulose `.*?` que cruzou bloco maior | Reescreveu jsCode limpo do zero |
-| 6 | Reonic `contacts` returned 100 items separados | n8n divide arrays em items por padrão | Refatorou Code com `safeAll().map()` + função `unwrap` |
-| 7 | `bcrypt.compareSync` returnou false | Linha `VITE_DASHBOARD_PASSWORD_HASH` ficou comentada após patch | Removeu `# ` da linha; revalidou |
-| 8 | `vercel --token "$T"` rejeitado | Token Vercel contém `:` interpretado como param separator | Splitou em `--token vcp_...` + `--scope team_...` |
-| 9 | Senha sempre "incorreta" em produção | Envs `VITE_*` nunca foram adicionadas via `vercel env add` → como `VITE_*` é inlineado em build-time, o bundle saiu sem hash; `bcrypt.compareSync(senha, undefined)` retorna false | `vercel env add` das 3 envs (HASH/API_URL/API_TOKEN) em production + `vercel --prod` (sessão de 13/05/2026) |
+| 5 | Regex no jsCode patch removeu blocos errados | Pattern guloso `.*?` | Reescreveu jsCode limpo do zero |
+| 6 | Reonic contacts retornava 100 items separados | n8n divide arrays em items por padrão | Code com `safeAll().map()` + `unwrap` |
+| 7 | `bcrypt.compareSync` retornou false | Linha `VITE_DASHBOARD_PASSWORD_HASH` ficou comentada após patch | Removeu `# ` |
+| 8 | `vercel --token "$T"` rejeitado | Token Vercel contém `:` interpretado como separator | `--token vcp_...` + `--scope team_...` |
+| 9 | Senha sempre "incorreta" em produção | Envs `VITE_*` nunca foram adicionadas via `vercel env add` → bundle saiu sem hash inlineado | `vercel env add` + `vercel --prod` |
+| 10 | Reonic respondia "no Authentication header" mesmo com Authorization | Header da Reonic é `x-authorization`, não `Authorization` | Trocou nome do header nos Code nodes paginados |
+| 11 | PUT workflow n8n sobrescreve cache | `staticData` no payload de PUT substitui o do runtime | Omitir `staticData` do payload preserva cache |
 
 ---
 
-## Sessão 13/05/2026 — Correção + rotações
+## Commits da sessão 13/05
 
-| Ação | Detalhe |
+```
+9e8b05d  fix(dashboard): logo PNG oficial + envs VITE_* + rotações de credenciais
+289244d  docs(dashboard): Sprint 2 Robustez — paginação + Meta v25.0 + HTTP status codes
+37fc677  feat(dashboard): observability via @sentry/react
+b3e8d29  polish(dashboard): tick automático + fade-in stagger + hover refinement
+41a65b3  feat(dashboard): Google Ads discovery (Story 2.1 + Bloco G placeholder)
+f2643bb  feat(dashboard): coluna Canal no Bloco C (preparando consolidação Meta+Google)
+```
+
+Todos pushados pra `main`. Tag `v1.0.0-mvp` no GitHub aponta pro `b3e8d29` (snapshot pré-Google-Ads).
+
+---
+
+## Pendências externas (Cleiton)
+
+### 🟡 Credenciais e configurações pendentes
+
+| Item | Onde criar/obter | Desbloqueia |
+|---|---|---|
+| `VITE_SENTRY_DSN` | https://sentry.io/signup (free tier 5K events/mês) | Captura real de erros frontend |
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | https://ads.google.com/aw/apicenter (MCC Escala → Tools → API Center) | Story 2.1 (aprovação 1-2 dias) |
+| `GOOGLE_ADS_CLIENT_ID` + `CLIENT_SECRET` | console.cloud.google.com → OAuth 2.0 Client IDs (Desktop) | Story 2.1 |
+| `GOOGLE_ADS_REFRESH_TOKEN` | OAuth flow 1x (scope `adwords`, `access_type=offline`, `prompt=consent`) | Story 2.1 |
+| `GOOGLE_ADS_MCC_ID` | Painel MCC Escala (10 dígitos sem traços) | Story 2.1 |
+| `GOOGLE_ADS_CUSTOMER_ID` (Revert) | Painel MCC → cliente Revert | Story 2.1 |
+| `.env.local` local | Atualizar com senha + DASHBOARD_API_TOKEN novos | Sincronizar com produção |
+
+### 🟡 Rotação de tokens externos ainda expostos no chat
+
+| Token | Onde rotacionar |
 |---|---|
-| Fix bug #9 | 3 envs `VITE_*` adicionadas em production e bundle regerado |
-| Logo PNG oficial | `public/escala-logo.png` (1440x1440, 325 KB) copiado de `CLIENTES/ESCALA/logos/logo escala.png`; `Header.tsx` + `LoginPage.tsx` apontando para `.png` |
-| Rotação DASHBOARD_API_TOKEN | Novo token 64-char hex gerado; jsCode do node `Validar Token e Servir Cache` no workflow `AJypFIeC4rMcs18P` atualizado via API n8n; `VITE_DASHBOARD_API_TOKEN` no Vercel substituído; redeploy validado (token velho retorna `INVALID_TOKEN`, novo retorna `ok:true`) |
-| Rotação senha dashboard | Nova senha 22-char gerada; hash bcrypt(10) atualizado em `VITE_DASHBOARD_PASSWORD_HASH` no Vercel; redeploy validado (bundle `index-BwwerC59.js` contém hash novo) |
+| `VERCEL_TOKEN` | https://vercel.com/account/tokens → "Create" + delete o velho |
+| `META_GRAPH_TOKEN` | developers.facebook.com → System User → Generate |
+| `REONIC_API_KEY` | painel Reonic |
+| `N8N_API_KEY` | n8n → Settings → API → revoke + criar novo |
+
+DASHBOARD_API_TOKEN e senha do dashboard **já foram rotacionados** nesta sessão.
+
+### 🟡 Pendências com o Robson
+
+| ID | Pergunta | Desbloqueia |
+|---|---|---|
+| Q-4 | Campo `produto` no Reonic | Bloco E — Mix de Produto |
+| Q-5 | Critério objetivo de MQL | Cálculo de MQL preciso no Bloco C |
+| Q-7 | UTMs `google_ads` no GTM da Revert + tag de conversão | Match Google Ads ↔ Reonic na Story 2.1 |
 
 ---
 
-## Sessão 13/05/2026 (parte 2) — Sprint 2 Robustez
+## Próximos passos sugeridos
 
-| Ação | Detalhe |
-|---|---|
-| HTTP status codes corretos no webhook | `Respond JSON` agora usa `responseCode: "={{ $json._httpStatus }}"`. Webhook retorna 401 em token inválido e 200 em cache válido (resolve ADR-031, pendência 🟢) |
-| Paginação Reonic `/contacts` | Node `Buscar Contacts Reonic` migrado de `httpRequest` para `code` com loop `for (page = 1..50)` até `length === 0` ou `< 100`. Header correto: `x-authorization` (não `Authorization` — daí o erro enganoso "There is no Authentication header" em testes manuais). Saída: `{items: [...]}` consumida pelo `unwrap` em `Calcular Metricas`. Resultado: **234 contacts** carregados (antes capava em 100) |
-| Paginação Reonic `/h360/offers` | Mesmo padrão. Saída: `{results: [...]}`. Resultado: **234 offers** carregados (antes capava em 100) |
-| Meta Graph v23.0 → v25.0 | 3 nodes Meta (`Campanhas`, `Insights`, `Ads`) com URL atualizada via patch script; execução 354 validou sem erros (11 campanhas, 2 insights, 14 ads retornados) |
-| Validação | Cron acelerado para `0 * * * * *` (cada minuto), 3 execuções sucessivas com `status=success`, cron restaurado para `0 */30 * * * *`. Webhook respondendo `cached_at: 2026-05-13T21:40:13.089Z` com `funil.leads: 49` (vs `21` no cache pré-paginação) |
-| Bug operacional descoberto | PUT no workflow via API n8n sobrescreve `staticData` se enviado no payload. Solução: omitir `staticData` do payload de PUT para preservar cache em runtime |
-
----
-
-## Pendências para Cleiton
-
-### 🔴 Críticas (antes de mostrar ao Robson)
-- [ ] **`git push origin main` + `git push --tags`**: terminal local não tinha credenciais GitHub. Rodar `gh auth login` ou configurar credential.helper antes de pushear (inclui commits do logo PNG + tag `v1.0.0-mvp`)
-- [ ] **Atualizar `.env.local` local** com a nova senha + novo DASHBOARD_API_TOKEN (valores entregues fora do report) — produção já está com os valores novos, mas o local está desincronizado
-
-### 🟡 Importantes
-- [ ] **Rotacionar tokens externos restantes**: META_GRAPH_TOKEN (developers.facebook.com), REONIC_API_KEY (painel Reonic), N8N_API_KEY (n8n settings → API), VERCEL_TOKEN (vercel.com/account/tokens). DASHBOARD_API_TOKEN e senha do dashboard já foram rotacionados nesta sessão
-- [ ] **Q-4 (Robson)**: campo `produto` no Reonic — destrava Bloco E
-- [ ] **Q-5 (Robson)**: critério objetivo de MQL — destrava cálculo mais preciso na coluna MQL do Bloco C
-
-### 🟢 Sprint 2 — concluído nesta sessão
-- [x] ~~Paginação Reonic~~ — implementada via Code nodes com loop, 234 contacts + 234 offers
-- [x] ~~HTTP status codes do webhook~~ — 401/200 dinâmicos via `responseCode` expression
-- [x] ~~Meta Graph v25.0~~ — bump dos 3 nodes Meta aplicado e validado
-
-### 🟢 Sprint 2 — Sentry frontend (parte 3 da sessão 13/05)
-
-- [x] **@sentry/react instalado** (10.53.1) + helper em `src/lib/sentry.ts` (init, captureException, ErrorBoundary wrapper)
-- [x] **ErrorBoundary** envolvendo `<App />` em `main.tsx` com FallbackUI estilizado (gold/black + botão "Tentar novamente")
-- [x] **captureException** ligado em `useDashboardData.ts` para erros inesperados (ignora CACHE_REFRESHING/INVALID_TOKEN que são esperados)
-- [x] **No-op gracioso** quando `VITE_SENTRY_DSN` não está setado (console.error como fallback)
-- [x] **PII protection** via `beforeSend` (remove Authorization header) e `sendDefaultPii: false`
-- [x] Build validado (bundle `index-Bk2UmpdM.js`, 255 KB / 85 KB gzip — antes 238 KB / 79 KB) e deploy em produção
-- [ ] **PENDENTE pro Cleiton:** criar projeto Sentry em https://sentry.io (free tier suporta 5K events/mês) e adicionar `VITE_SENTRY_DSN` no Vercel + redeploy. Sem isso, erros caem em `console.error` apenas.
-
-### 🟢 Sprint 2 — Polimento UX (parte 4 da sessão 13/05)
-
-- [x] **Timestamps relativos auto-atualizando**: tick de 30s no `Header.tsx` faz o "há X min" atualizar sem precisar refresh manual
-- [x] **Loading skeleton**: já implementado em todos os 6 blocos (estado pré-existente)
-- [x] **Hover dourado refinado nos cards**: `.card-escala:hover` agora tem border-gold/40 + box-shadow dourado sutil (transition 300ms)
-- [x] **Fade-in stagger nos blocos**: animação `fade-in-up` (0.5s) com stagger 50ms→280ms entre os 4 grupos do dashboard
-
-### 🟢 Sprint 2 — Bloco C com coluna Canal (parte 6 da sessão 13/05)
-
-- [x] **`AdChannel` type** (`'meta' | 'google'`) e `channel?: AdChannel` em `CampanhaRow`
-- [x] **ChannelPill** no `BlocoC_Campanhas.tsx`: pill azul para Meta, amarelo para Google, ambos com border + bg tons claros
-- [x] **Filtro Todos/Meta/Google** acima da tabela — só aparece quando há > 1 canal nos dados (UX progressiva)
-- [x] **Patch `Calcular Metricas` no workflow `AJypFIeC4rMcs18P`** via API n8n: campo `channel: 'meta'` adicionado em todos os items de `campanhasOut`. Cron acelerado pra `0 * * * * *` (1 exec), validado (`cached_at: 01:39:10`, 11 campanhas com `channel='meta'`), cron restaurado pra `0 */30 * * * *` **sem mexer staticData** (preserva cache em runtime — bug operacional documentado anteriormente)
-- [x] Total row do Bloco C ajustado pra 11 colunas (canal vazio + Total na coluna Campanha)
-- [x] Bundle `index-CfNyxii-.js` (260 KB / 86 KB gzip)
-
-Quando Google Ads chegar via Story 2.1, basta o workflow popular `channel: 'google'` nas campanhas Google e o filtro automaticamente aparece sem código adicional no frontend.
-
-### 🟢 Sprint 2 — Google Ads discovery (parte 5 da sessão 13/05)
-
-- [x] **Story 2.1** criada (`docs/stories/2.1.story.md`): plano completo de credenciais (6 envs), GAQL queries, alterações no workflow n8n, pseudo-código do node "Buscar Google Ads", match UTM Reonic, plano de execução por fase, riscos e decisões pendentes
-- [x] **data-schema.md v1.1**: Q-1/Q-2/Q-3 fechadas via ADR-029; Q-6 (MCC + customer_id) e Q-7 (UTMs no GTM) abertas; seção §9 detalha Google Ads (endpoint, credenciais, GAQL, schema, match)
-- [x] **types.ts**: `GoogleAdsBlock` + `GoogleAdsCampaignRow` adicionados; `DashboardCache.google_ads` opcional; `sources_status.google_ads` opcional com estado `'not_configured'`
-- [x] **Bloco G placeholder em produção**: `BlocoG_GoogleAds.tsx` renderiza EmptyState "Aguardando configuração" enquanto `sources_status.google_ads === 'not_configured'`. Quando dados chegarem, mostra totais (spend 30d, conversões 30d) + tabela top 8 campanhas com CPL real (match via UTM Reonic)
-- [x] Bundle `index-CMFigSI4.js` (258 KB / 85 KB gzip — antes 255/85)
-- [ ] **PENDENTE pro Cleiton**: aplicar pelo developer_token Google Ads (1-2 dias de aprovação), criar OAuth client no GCP, capturar refresh_token, e me devolver 6 envs (`GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_ADS_MCC_ID`, `GOOGLE_ADS_CUSTOMER_ID`). Detalhamento em `docs/stories/2.1.story.md`
-
-### 🟢 Sprint 2 — ainda pendente
-- [ ] Google Ads execução (após credenciais — 3h de trabalho)
-- [ ] Magic link auth — bloqueado: nenhum workflow do n8n tem SMTP configurado. Requer credencial externa (Gmail/Resend/Mailgun) ou pivotar para Magic Link via WhatsApp/Zaia
-- [ ] Observability no n8n: enviar erros do workflow pro Sentry via HTTP Request (depende do DSN configurado)
-- [ ] **Sentry DSN**: criar projeto em sentry.io e adicionar `VITE_SENTRY_DSN` no Vercel
-
----
-
-## Próximos passos sugeridos (Sprint 2)
-
-1. Robson valida Q-4/Q-5 → habilita Bloco E + MQL preciso
-2. Paginação Reonic via SplitInBatches no Aggregator
-3. Logo oficial + animações sutis (hover dourado nos cards)
-4. Integração Google Ads (segundo PRD seção 11 roadmap)
-5. Sentry + alertas (v1.4 do roadmap)
-6. Magic link auth (v1.1 substituindo senha compartilhada)
-7. Status HTTP correto no webhook (Switch + 3 Respond nodes)
-
----
-
-## Notificações enviadas via MCP `Qcjrrzy17k2sdq8M`
-
-1. ✅ Checkpoint #1 — Stories 1.1 + 1.2 DONE (workflow no ar) — execId 298
-2. ✅ Checkpoint #3 — Story 1.10 DONE (prod no ar) — execId 300
-
-> Checkpoint #2 (após Story 1.3, deploy preview) acabou consolidado no #3 porque o deploy preview e o deploy prod foram feitos na mesma sessão.
+1. **Você cria conta Sentry** (5 min) → me devolve DSN → eu seto no Vercel + redeploy (10 min)
+2. **Você aplica pelo developer_token Google Ads** (1-2 dias de aprovação Google)
+3. **Você alinha Q-4/Q-5/Q-7 com Robson** (próxima call)
+4. **Quando credenciais Google Ads chegarem:** ~3h pra integração end-to-end seguindo Story 2.1
+5. **Magic link auth** depende de SMTP no n8n (Gmail/Resend/Mailgun) ou pivotar para WhatsApp/Zaia
+6. **Observability no n8n** (enviar erros do workflow pro Sentry via HTTP Request) — depende do DSN
 
 ---
 
@@ -174,10 +248,14 @@ Quando Google Ads chegar via Story 2.1, basta o workflow popular `channel: 'goog
 |---|---|
 | Vercel | R$ 0 (free tier; 1 deploy prod ativo) |
 | GitHub repo | R$ 0 (privado, account pessoal) |
-| n8n self-hosted | já existente (sem custo incremental) |
-| Domínio | já existente (sem custo incremental) |
-| Total | R$ 0 |
+| n8n self-hosted | R$ 0 incremental (já existia) |
+| Domínio | R$ 0 incremental (já existia) |
+| Sentry | R$ 0 (free tier, quando você criar o projeto) |
+| API Claude (sessões 12-13/05) | R$ 150-300 estimado |
+| **Total Sprint 1 + Sprint 2** | **R$ 150-300** |
+
+Versus estimativa inicial Lovable: R$ 3.450. **Economia: R$ 3.150** mantida.
 
 ---
 
-*MVP entregue em uma sessão única. v1.0.0-mvp pronto para validação com Robson.*
+*Sprint 1 entregou MVP em 1 sessão. Sprint 2 entregou robustez + observability + UX + preparação Google Ads em outra sessão única, sem regressões. Performance não é sorte. É método.*
