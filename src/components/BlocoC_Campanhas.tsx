@@ -117,7 +117,7 @@ export function BlocoC_Campanhas({ data, loading }: Props) {
   return (
     <Card tag="Performance por Campanha" className="xl:col-span-3">
       {showFilter && (
-        <div className="flex items-center gap-2 mb-3">
+        <div role="group" aria-label="Filtrar por canal" className="flex items-center gap-2 mb-3">
           <span className="text-[11px] uppercase tracking-wider text-gray-500">Canal:</span>
           {(['all', 'meta', 'google'] as ChannelFilter[]).map((opt) => {
             if (opt !== 'all' && !channels.has(opt)) return null;
@@ -127,9 +127,10 @@ export function BlocoC_Campanhas({ data, loading }: Props) {
               <button
                 key={opt}
                 type="button"
+                aria-pressed={active}
                 onClick={() => setChannelFilter(opt)}
                 className={cn(
-                  'px-3 py-1 text-xs uppercase tracking-wider rounded border transition',
+                  'px-3 py-1 text-xs uppercase tracking-wider rounded border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60',
                   active
                     ? 'border-gold/60 text-gold bg-gold/10'
                     : 'border-gold/15 text-gray-400 hover:border-gold/30 hover:text-gold'
@@ -142,27 +143,39 @@ export function BlocoC_Campanhas({ data, loading }: Props) {
         </div>
       )}
       <div className="overflow-x-auto -mx-2">
-        <table className="min-w-full text-sm">
+        <table className="min-w-full text-sm" aria-label="Performance por campanha">
           <thead>
             <tr className="bg-navy text-gold">
-              <th className="px-3 py-2 text-xs uppercase tracking-wider font-medium text-left whitespace-nowrap">Canal</th>
+              <th scope="col" className="px-3 py-2 text-xs uppercase tracking-wider font-medium text-left whitespace-nowrap">Canal</th>
               {COLS.map((c) => {
                 const active = sortKey === c.key;
                 const Icon = !active ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown;
+                const ariaSort: 'ascending' | 'descending' | 'none' = active
+                  ? (sortDir === 'asc' ? 'ascending' : 'descending')
+                  : 'none';
                 return (
                   <th
                     key={c.key}
-                    onClick={() => toggleSort(c.key)}
+                    scope="col"
+                    aria-sort={ariaSort}
                     className={cn(
-                      'cursor-pointer select-none px-3 py-2 text-xs uppercase tracking-wider font-medium whitespace-nowrap',
+                      'px-3 py-2 text-xs uppercase tracking-wider font-medium whitespace-nowrap',
                       c.align === 'right' ? 'text-right' : 'text-left',
                       active && 'text-goldLight'
                     )}
                   >
-                    <span className="inline-flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(c.key)}
+                      aria-label={`Ordenar por ${c.label}${active ? ` (atual: ${sortDir === 'asc' ? 'crescente' : 'decrescente'})` : ''}`}
+                      className={cn(
+                        'inline-flex items-center gap-1 select-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60',
+                        c.align === 'right' && 'ml-auto'
+                      )}
+                    >
                       {c.label}
-                      <Icon size={12} className={active ? 'opacity-100' : 'opacity-40'} />
-                    </span>
+                      <Icon size={12} className={active ? 'opacity-100' : 'opacity-40'} aria-hidden="true" />
+                    </button>
                   </th>
                 );
               })}

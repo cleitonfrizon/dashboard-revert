@@ -48,15 +48,15 @@ export function BlocoF_Saturacao({ data, loading }: Props) {
     <Card tag="Saturação Criativa" className="xl:col-span-3">
       <h2 className="font-display text-xl text-white mb-4">Criativos ativos · últimos 7 dias</h2>
       <div className="overflow-x-auto -mx-2">
-        <table className="min-w-full text-sm">
+        <table className="min-w-full text-sm" aria-label="Saturação de criativos">
           <thead>
             <tr className="bg-navy text-gold">
-              <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Anúncio</th>
-              <th className="px-3 py-2 text-left text-xs uppercase tracking-wider">Campanha</th>
-              <th className="px-3 py-2 text-right text-xs uppercase tracking-wider">Frequência</th>
-              <th className="px-3 py-2 text-right text-xs uppercase tracking-wider">CTR 7d</th>
-              <th className="px-3 py-2 text-right text-xs uppercase tracking-wider">Spend</th>
-              <th className="px-3 py-2 text-center text-xs uppercase tracking-wider">Recomendação</th>
+              <th scope="col" className="px-3 py-2 text-left text-xs uppercase tracking-wider">Anúncio</th>
+              <th scope="col" className="px-3 py-2 text-left text-xs uppercase tracking-wider">Campanha</th>
+              <th scope="col" className="px-3 py-2 text-right text-xs uppercase tracking-wider">Frequência</th>
+              <th scope="col" className="px-3 py-2 text-right text-xs uppercase tracking-wider">CTR 7d</th>
+              <th scope="col" className="px-3 py-2 text-right text-xs uppercase tracking-wider">Spend</th>
+              <th scope="col" className="px-3 py-2 text-center text-xs uppercase tracking-wider">Recomendação</th>
             </tr>
           </thead>
           <tbody>

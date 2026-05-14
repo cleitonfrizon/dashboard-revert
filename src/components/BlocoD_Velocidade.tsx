@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Check } from 'lucide-react';
 import type { VelocidadeBlock } from '@/lib/types';
 import { formatDuration, formatInt } from '@/lib/formatters';
 import { Card } from './shared/Card';
@@ -87,11 +87,20 @@ export function BlocoD_Velocidade({ data, loading }: Props) {
 
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle size={18} className="text-danger" />
+            {data.hall_da_vergonha.length === 0 ? (
+              <Check size={18} className="text-success" />
+            ) : (
+              <AlertTriangle size={18} className="text-danger" />
+            )}
             <h2 className="font-display text-xl text-white">Hall da Vergonha</h2>
           </div>
           {data.hall_da_vergonha.length === 0 ? (
-            <EmptyState title="Ninguém na lista" description="Todos os leads do período foram contatados em < 24h." />
+            <EmptyState
+              icon={<Check size={32} className="text-success" />}
+              title="Hall vazio · 100% atendidos"
+              description="Toda a fila do período foi contatada em menos de 24h. Resposta dentro do padrão."
+              hint="Mantenha. É o estado-alvo."
+            />
           ) : (
             <ul className="divide-y divide-gold/10">
               {data.hall_da_vergonha.map((lead) => (

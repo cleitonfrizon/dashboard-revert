@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Header } from './shared/Header';
 import { Footer } from './shared/Footer';
 import { PeriodFilter } from './PeriodFilter';
@@ -20,9 +20,32 @@ const PERIOD_LABELS: Record<PeriodPreset, string> = {
   mes_atual: 'Mês atual',
 };
 
+const PERIOD_STORAGE_KEY = 'dashboard:period';
+const VALID_PERIODS: PeriodPreset[] = ['hoje', '7d', '30d', 'mes_atual'];
+
+function readStoredPeriod(): PeriodPreset {
+  try {
+    const stored = window.localStorage.getItem(PERIOD_STORAGE_KEY);
+    if (stored && (VALID_PERIODS as string[]).includes(stored)) {
+      return stored as PeriodPreset;
+    }
+  } catch {
+    // localStorage indisponível (modo privado, quota, etc.) — fallback silencioso
+  }
+  return '30d';
+}
+
 export function DashboardContainer() {
   const { data, loading, error, refresh } = useDashboardData();
-  const [period, setPeriod] = useState<PeriodPreset>('30d');
+  const [period, setPeriod] = useState<PeriodPreset>(readStoredPeriod);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PERIOD_STORAGE_KEY, period);
+    } catch {
+      // ver readStoredPeriod
+    }
+  }, [period]);
 
   const isGooglePreview = useMemo(() => {
     if (typeof window === 'undefined') return false;
