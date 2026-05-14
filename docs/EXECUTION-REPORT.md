@@ -1,15 +1,16 @@
 # Execution Report — Dashboard de BI Revert
 
-**Última atualização:** 2026-05-13
+**Última atualização:** 2026-05-14
 **Status produção:** ✅ Operacional (HTTP 200)
 **Tag MVP:** `v1.0.0-mvp` (12/05/2026)
-**Último commit em main:** `f2643bb` (13/05/2026)
+**Último commit em main (remoto):** `448515b` (13/05/2026)
+**Commits locais aguardando push:** 6 (sessão 14/05, ver §Commits da sessão 14/05)
 
 ---
 
 ## Resumo executivo
 
-O MVP foi entregue em **12/05/2026** após uma sessão única de execução (10 stories, R$ 0 de custo extra além das R$ 150-300 de API). Em **13/05/2026** uma segunda sessão entregou seis blocos de evolução pós-MVP: correção crítica de senha em produção, rotação de credenciais sensíveis, robustez de dados (paginação Reonic + Meta API v25.0 + HTTP status codes), observabilidade via Sentry, polimento de UX e preparação completa para Google Ads. Total de **6 commits no main, todos validados em produção**.
+O MVP foi entregue em **12/05/2026** após uma sessão única de execução (10 stories, R$ 0 de custo extra além das R$ 150-300 de API). Em **13/05/2026** uma segunda sessão entregou seis blocos de evolução pós-MVP: correção crítica de senha em produção, rotação de credenciais sensíveis, robustez de dados (paginação Reonic + Meta API v25.0 + HTTP status codes), observabilidade via Sentry, polimento de UX e preparação completa para Google Ads. Em **14/05/2026** uma terceira sessão entregou Story 2.1 totalmente preparada (workflow JSON pronto pra colar, patch documentado, fixtures + flag de preview, guia OAuth executável) e seis lotes de polimento (TableSkeleton, EmptyStates contextuais, a11y nas tabelas, período persistente, pills de status no Header, atalhos de teclado, breadcrumbs Sentry). Total acumulado: **12 commits em main + 6 locais aguardando push**.
 
 ---
 
@@ -196,6 +197,121 @@ Todos pushados pra `main`. Tag `v1.0.0-mvp` no GitHub aponta pro `b3e8d29` (snap
 
 ---
 
+## Sprint 2 (continuação) — sessão 14/05/2026
+
+Sessão dedicada a "preparar terreno" da Story 2.1 sem credenciais Google Ads + 5 lotes de polimento sobre o MVP, sem nenhuma dependência externa. Cada lote validado com `typecheck` + `build` + HMR no `vite dev` antes do próximo commit. 6 commits locais aguardando autorização de push (`@devops`).
+
+### 1. Story 2.1 preparada end-to-end (commit `8a4d348`)
+
+Tudo que dá pra fazer **antes** das credenciais Google Ads chegarem:
+
+- `docs/n8n-workflows/google-ads-fetch-node.json` — node Code completo com OAuth refresh + 2 queries GAQL (LAST_30_DAYS + LAST_7_DAYS) + fallback gracioso (`status: 'error'` ou `'not_configured'` sem quebrar o pipeline)
+- `docs/n8n-workflows/calcular-metricas-google-patch.md` — diff em 3 blocos pra patchar `Calcular Metricas` com match Reonic via UTM (`google`, `google_ads`, `googleads`) e populate `cache.google_ads`
+- `src/lib/fixtures/googleAdsSample.ts` — 6 campanhas sintéticas realistas (Search Brand R$ 21 CPL, PMax R$ 141 CPL, Display CPL R$ 155, etc.)
+- `DashboardContainer.tsx` — flag `?preview=google` injeta fixture sem afetar produção (banner sutil avisa modo preview)
+- `docs/guides/google-ads-oauth-setup.md` — passo-a-passo com `curl` exatos pra capturar `refresh_token` em ~5min após `developer_token` aprovar (incluindo sanity check antes de tocar no n8n)
+
+**Quando credenciais chegarem:** 6 envs no n8n + 2 patches no workflow = Bloco G em produção em ~10min.
+
+### 2. TableSkeleton + EmptyStates contextuais (commit `e6e5db4`)
+
+- Novo `shared/TableSkeleton.tsx` — header + linhas em opacidade decrescente (mais fiel ao layout real do que `Skeleton` genérico)
+- Aplicado nos Blocos C, F e G — feedback visual consistente durante o load inicial
+- `BlocoE_Mix` migrado de div `animate-pulse` solta pro componente `Skeleton` padrão
+- `EmptyState` ganha prop `hint` (texto secundário uppercase gold/40)
+- Bloco E: hint aponta pra Q-4 + `data-schema.md`
+- Bloco F: copy explica que "tendências CTR/CPL e recomendação de troca aparecem quando há histórico suficiente" + hint da ADR-022
+- Bloco G: hint aponta pro `google-ads-oauth-setup.md` + estado dedicado de erro de auth (separado do `not_configured`)
+
+### 3. A11y nas tabelas + período persistente + microcopy (commit `d28ee74`)
+
+- Bloco C: headers ordenáveis viram `<button>` dentro de `<th>` com `scope="col"`, `aria-sort` dinâmico (`ascending`/`descending`/`none`), `aria-label` reativo ("Ordenar por X (atual: crescente)"), focus ring dourado
+- Bloco C: filtro Canal ganha `role="group"` + `aria-pressed` em cada botão
+- Blocos F e G: `aria-label` na tabela + `scope="col"` em todos os ths
+- `PeriodFilter`: escolha persiste em `localStorage` (`dashboard:period`) com fallback silencioso quando indisponível
+- Bloco D · Hall da Vergonha vazio agora **celebra**: ícone `Check` verde, título "Hall vazio · 100% atendidos", hint "Mantenha. É o estado-alvo." (antes só sumia neutro)
+
+### 4. Pills de status das fontes no Header (commit `82ee5b8`)
+
+3 dots coloridos próximos à timestamp "Atualizado", visíveis em `lg+` (>=1024px):
+
+- ● Meta · ● Reonic · ● Google
+- Cores: success (ok) · warning (stale) · danger (error) · gray (not_configured)
+- `title` nativo + `aria-label`: "Meta: OK · última coleta há 12 min"
+- `role="group"` + `aria-label="Saúde das fontes de dados"` no wrapper
+
+Permite enxergar saúde do pipeline em 1 segundo sem precisar abrir o log do n8n. Componente isolado em `shared/SourceStatusPills.tsx` pra reuso.
+
+### 5. Atalhos de teclado + overlay de ajuda (commit `cedf658`)
+
+Hook `useKeyboardShortcuts` escuta `keydown` global e ignora quando o foco está em `input`/`textarea`/`contentEditable` (não interfere com a tela de login). Modifiers (Ctrl/Meta/Alt) são ignorados.
+
+| Tecla | Ação |
+|---|---|
+| `R` | Atualizar dados agora |
+| `1` `2` `3` `4` | Período: Hoje · 7d · 30d · Mês atual |
+| `?` | Abre/fecha overlay de ajuda |
+| `Esc` | Fecha o overlay |
+
+`ShortcutsOverlay` é um `dialog` acessível (`role=dialog`, `aria-modal`, foco no botão fechar ao abrir, click-fora pra fechar, kbd estilizado por atalho). Footer ganha link sutil "Atalhos `[?]`" pra descoberta.
+
+### 6. Breadcrumbs do Sentry nas ações de UI e fetch (commit `16f6509`)
+
+Helper novo `addBreadcrumb({ category, message, data, level })` que é **no-op silencioso** quando `VITE_SENTRY_DSN` não está setado (sem log de console — não polui).
+
+Eventos rastreados:
+
+| Categoria | Eventos |
+|---|---|
+| `auth` | `login_ok`, `login_failed` (warning), `logout` |
+| `ui.action` | `refresh` (data: `source` = `header`/`shortcut`/`manual`) |
+| `ui.period` | `period_changed` (data: período atual) |
+| `ui.filter` | `channel_filter` (data: `all`/`meta`/`google`) |
+| `ui.shortcut` | `help_opened`, `help_closed` |
+| `data.fetch` | `dashboard_fetch_ok` (duration_ms + sources_status) e `dashboard_fetch_error` (code, level dinâmico) |
+
+Quando o DSN entrar, qualquer exception capturada vem com os ~10 breadcrumbs anteriores — reconstrói o que o usuário fez antes do erro.
+
+---
+
+## Métricas antes/depois (sessão 14/05)
+
+| Métrica | Antes (final 13/05) | Depois (final 14/05) |
+|---|---|---|
+| Bundle frontend | 260 KB / 86 KB gzip | **269.5 KB / 89.2 KB gzip** |
+| Componentes shared | 6 (Card, DeltaBadge, EmptyState, Footer, Header, Skeleton) | **9 (+ TableSkeleton, SourceStatusPills, ShortcutsOverlay)** |
+| Hooks customizados | 2 (useAuth, useDashboardData) | **3 (+ useKeyboardShortcuts)** |
+| Cobertura a11y nas tabelas | nenhuma | **3 tabelas com scope/aria-sort/aria-label** |
+| Persistência de preferências | nenhuma | **período em localStorage** |
+| Saúde das fontes visível | só no JSON da API | **3 pills no Header com tooltip humano** |
+| Atalhos de teclado | nenhum | **R · 1-4 · ? · Esc** |
+| Breadcrumbs antes de exception | nenhum | **6 categorias rastreadas** |
+| Story 2.1 (Google Ads) | só plano em prosa | **workflow JSON + patch + fixtures + OAuth guide** |
+| Modo preview (sem credencial) | inexistente | **`?preview=google` injeta fixture** |
+
+---
+
+## Commits da sessão 14/05
+
+```
+8a4d348  feat(dashboard): Story 2.1 prep — workflow JSON + patch + fixtures + OAuth guide
+e6e5db4  polish(dashboard): TableSkeleton + EmptyStates contextuais
+d28ee74  feat(dashboard): a11y nas tabelas + período persistente + microcopy
+82ee5b8  feat(dashboard): pills de status das fontes no Header
+cedf658  feat(dashboard): atalhos de teclado + overlay de ajuda
+16f6509  feat(dashboard): breadcrumbs do Sentry nas ações de UI e fetch
+```
+
+**Estado:** 6 commits em `main` local, `origin/main` atrás. Aguardando autorização do `@devops` pra push (regra de Agent Authority).
+
+**Validações automatizadas executadas em cada commit:**
+- `tsc --noEmit` — 0 erros em todos
+- `vite build` — bundle final 269.53 KB / 89.15 KB gzip
+- `eslint .` — 0 erros (2 warnings pré-existentes em `AuthContext.tsx` e `main.tsx`, sem relação)
+- `vite dev` em `http://localhost:5174/` — HMR validado em todos os módulos novos/modificados
+
+---
+
 ## Pendências externas (Cleiton)
 
 ### 🟡 Credenciais e configurações pendentes
@@ -233,12 +349,13 @@ DASHBOARD_API_TOKEN e senha do dashboard **já foram rotacionados** nesta sessã
 
 ## Próximos passos sugeridos
 
-1. **Você cria conta Sentry** (5 min) → me devolve DSN → eu seto no Vercel + redeploy (10 min)
-2. **Você aplica pelo developer_token Google Ads** (1-2 dias de aprovação Google)
-3. **Você alinha Q-4/Q-5/Q-7 com Robson** (próxima call)
-4. **Quando credenciais Google Ads chegarem:** ~3h pra integração end-to-end seguindo Story 2.1
-5. **Magic link auth** depende de SMTP no n8n (Gmail/Resend/Mailgun) ou pivotar para WhatsApp/Zaia
-6. **Observability no n8n** (enviar erros do workflow pro Sentry via HTTP Request) — depende do DSN
+1. **Autorizar push dos 6 commits locais da sessão 14/05** → `@devops *push` (Vercel detecta e faz redeploy automático; tudo já validado em type-check + build)
+2. **Você cria conta Sentry** (5 min) → me devolve DSN → eu seto no Vercel + redeploy (10 min). Bonus: com breadcrumbs já plugados, primeiras exceptions já chegam com trilha completa do usuário
+3. **Você aplica pelo `developer_token` Google Ads** (1-2 dias de aprovação Google)
+4. **Você alinha Q-4/Q-5/Q-7 com Robson** (próxima call)
+5. **Quando credenciais Google Ads chegarem:** ~10min (não mais ~3h) seguindo `docs/guides/google-ads-oauth-setup.md` — 6 envs no n8n + 2 patches do `docs/n8n-workflows/`
+6. **Magic link auth** depende de SMTP no n8n (Gmail/Resend/Mailgun) ou pivotar para WhatsApp/Zaia
+7. **Observability no n8n** (enviar erros do workflow pro Sentry via HTTP Request) — depende do DSN
 
 ---
 
@@ -251,11 +368,11 @@ DASHBOARD_API_TOKEN e senha do dashboard **já foram rotacionados** nesta sessã
 | n8n self-hosted | R$ 0 incremental (já existia) |
 | Domínio | R$ 0 incremental (já existia) |
 | Sentry | R$ 0 (free tier, quando você criar o projeto) |
-| API Claude (sessões 12-13/05) | R$ 150-300 estimado |
-| **Total Sprint 1 + Sprint 2** | **R$ 150-300** |
+| API Claude (sessões 12-14/05) | R$ 200-400 estimado |
+| **Total Sprint 1 + Sprint 2** | **R$ 200-400** |
 
-Versus estimativa inicial Lovable: R$ 3.450. **Economia: R$ 3.150** mantida.
+Versus estimativa inicial Lovable: R$ 3.450. **Economia: R$ 3.050+** mantida.
 
 ---
 
-*Sprint 1 entregou MVP em 1 sessão. Sprint 2 entregou robustez + observability + UX + preparação Google Ads em outra sessão única, sem regressões. Performance não é sorte. É método.*
+*Sprint 1 entregou MVP em 1 sessão. Sprint 2 foi distribuído em duas sessões — robustez + observability + UX + preparação Google Ads em 13/05; Story 2.1 totalmente preparada + polimento profundo (a11y, atalhos, breadcrumbs, status pills) em 14/05 — sem regressões em produção em momento algum. Performance não é sorte. É método.*
