@@ -51,10 +51,13 @@ export interface FunilBlock {
   };
 }
 
+export type AdChannel = 'meta' | 'google';
+
 export interface CampanhaRow {
   id: string;
   name: string;
   status: string;
+  channel?: AdChannel;
   impressions: number;
   ctr: number;
   conversas_meta: number;

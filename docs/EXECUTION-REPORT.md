@@ -119,6 +119,17 @@
 - [x] **Hover dourado refinado nos cards**: `.card-escala:hover` agora tem border-gold/40 + box-shadow dourado sutil (transition 300ms)
 - [x] **Fade-in stagger nos blocos**: animação `fade-in-up` (0.5s) com stagger 50ms→280ms entre os 4 grupos do dashboard
 
+### 🟢 Sprint 2 — Bloco C com coluna Canal (parte 6 da sessão 13/05)
+
+- [x] **`AdChannel` type** (`'meta' | 'google'`) e `channel?: AdChannel` em `CampanhaRow`
+- [x] **ChannelPill** no `BlocoC_Campanhas.tsx`: pill azul para Meta, amarelo para Google, ambos com border + bg tons claros
+- [x] **Filtro Todos/Meta/Google** acima da tabela — só aparece quando há > 1 canal nos dados (UX progressiva)
+- [x] **Patch `Calcular Metricas` no workflow `AJypFIeC4rMcs18P`** via API n8n: campo `channel: 'meta'` adicionado em todos os items de `campanhasOut`. Cron acelerado pra `0 * * * * *` (1 exec), validado (`cached_at: 01:39:10`, 11 campanhas com `channel='meta'`), cron restaurado pra `0 */30 * * * *` **sem mexer staticData** (preserva cache em runtime — bug operacional documentado anteriormente)
+- [x] Total row do Bloco C ajustado pra 11 colunas (canal vazio + Total na coluna Campanha)
+- [x] Bundle `index-CfNyxii-.js` (260 KB / 86 KB gzip)
+
+Quando Google Ads chegar via Story 2.1, basta o workflow popular `channel: 'google'` nas campanhas Google e o filtro automaticamente aparece sem código adicional no frontend.
+
 ### 🟢 Sprint 2 — Google Ads discovery (parte 5 da sessão 13/05)
 
 - [x] **Story 2.1** criada (`docs/stories/2.1.story.md`): plano completo de credenciais (6 envs), GAQL queries, alterações no workflow n8n, pseudo-código do node "Buscar Google Ads", match UTM Reonic, plano de execução por fase, riscos e decisões pendentes
