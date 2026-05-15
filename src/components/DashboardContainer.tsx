@@ -92,10 +92,10 @@ export function DashboardContainer() {
 
   useKeyboardShortcuts({
     onRefresh: useCallback(() => handleRefresh('shortcut'), [handleRefresh]),
-    onPeriodHoje: useCallback(() => setPeriod('hoje'), []),
-    onPeriod7d: useCallback(() => setPeriod('7d'), []),
-    onPeriod30d: useCallback(() => setPeriod('30d'), []),
-    onPeriodMes: useCallback(() => setPeriod('mes_atual'), []),
+    onPeriodHoje: useCallback(() => setPeriod('hoje'), [setPeriod]),
+    onPeriod7d: useCallback(() => setPeriod('7d'), [setPeriod]),
+    onPeriod30d: useCallback(() => setPeriod('30d'), [setPeriod]),
+    onPeriodMes: useCallback(() => setPeriod('mes_atual'), [setPeriod]),
     onToggleHelp: useCallback(() => {
       setHelpOpen((v) => {
         addBreadcrumb({ category: 'ui.shortcut', message: v ? 'help_closed' : 'help_opened' });

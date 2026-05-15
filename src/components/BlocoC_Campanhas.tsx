@@ -71,6 +71,13 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
     return new Set(data.map((r) => String(r.status || '').toUpperCase()));
   }, [data]);
 
+  const knownStatuses = useMemo(() => {
+    const s = new Set<StatusFilter>();
+    if (statuses.has('ACTIVE')) s.add('ACTIVE');
+    if (statuses.has('PAUSED')) s.add('PAUSED');
+    return s;
+  }, [statuses]);
+
   const rows = useMemo(() => {
     if (!data) return [];
     const byChannel = channelFilter === 'all' ? data : data.filter((r) => (r.channel ?? 'meta') === channelFilter);
@@ -129,12 +136,6 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
   };
 
   const showFilter = channels.size > 1;
-  const knownStatuses = useMemo(() => {
-    const s = new Set<StatusFilter>();
-    if (statuses.has('ACTIVE')) s.add('ACTIVE');
-    if (statuses.has('PAUSED')) s.add('PAUSED');
-    return s;
-  }, [statuses]);
   const showStatusFilter = knownStatuses.size > 1;
 
   return (
