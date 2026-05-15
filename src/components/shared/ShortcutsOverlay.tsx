@@ -12,6 +12,7 @@ const SHORTCUTS: Array<{ keys: string[]; description: string }> = [
   { keys: ['2'], description: 'Período: Últimos 7 dias' },
   { keys: ['3'], description: 'Período: Últimos 30 dias' },
   { keys: ['4'], description: 'Período: Mês atual' },
+  { keys: ['Ctrl', 'P'], description: 'Imprimir / Exportar PDF (layout otimizado)' },
   { keys: ['?'], description: 'Mostrar / ocultar esta ajuda' },
   { keys: ['Esc'], description: 'Fechar esta ajuda' },
 ];

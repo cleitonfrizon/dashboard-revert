@@ -1,16 +1,16 @@
 # Execution Report — Dashboard de BI Revert
 
-**Última atualização:** 2026-05-14
+**Última atualização:** 2026-05-15 (overnight 14→15/05)
 **Status produção:** ✅ Operacional (HTTP 200)
 **Tag MVP:** `v1.0.0-mvp` (12/05/2026)
-**Último commit em main (remoto):** `448515b` (13/05/2026)
-**Commits locais aguardando push:** 6 (sessão 14/05, ver §Commits da sessão 14/05)
+**Último commit em main (remoto):** `8ec8df8` (14/05/2026)
+**Commits locais (overnight 15/05):** 1 commit aguardando push após Cleiton reconectar credentials Meta no n8n (sparklines no Hero)
 
 ---
 
 ## Resumo executivo
 
-O MVP foi entregue em **12/05/2026** após uma sessão única de execução (10 stories, R$ 0 de custo extra além das R$ 150-300 de API). Em **13/05/2026** uma segunda sessão entregou seis blocos de evolução pós-MVP: correção crítica de senha em produção, rotação de credenciais sensíveis, robustez de dados (paginação Reonic + Meta API v25.0 + HTTP status codes), observabilidade via Sentry, polimento de UX e preparação completa para Google Ads. Em **14/05/2026** uma terceira sessão entregou Story 2.1 totalmente preparada (workflow JSON pronto pra colar, patch documentado, fixtures + flag de preview, guia OAuth executável) e seis lotes de polimento (TableSkeleton, EmptyStates contextuais, a11y nas tabelas, período persistente, pills de status no Header, atalhos de teclado, breadcrumbs Sentry). Total acumulado: **12 commits em main + 6 locais aguardando push**.
+O MVP foi entregue em **12/05/2026** após uma sessão única (10 stories). **13/05/2026** trouxe robustez+observability+Sentry+Story 2.1 prep (6 commits). **14/05/2026** dia inteiro de evolução intensa: senha rotacionada, filtro de período funcional (`cache.by_period`), 3 bugs profundos resolvidos via MCP n8n (spend_today real, funil PT-BR cumulativo, avg_response via notas humanas), 10 melhorias UX baseadas em pesquisa profunda (NN/G + Smashing 2025 + Stripe/Linear patterns): paleta refinada sem #000 puro, sticky tables, count-up animation, tooltips contextuais, busca inline, mobile responsive, stale indicator no Header, skeleton em mudança de período. **Overnight 14→15/05** entregou sparklines de 7d nos Hero cards (backend done, frontend pronto aguardando publish) + modo print/PDF-friendly. Total acumulado: **~17 commits em main + 1 local aguardando push pós-reconnect**.
 
 ---
 
@@ -356,6 +356,37 @@ DASHBOARD_API_TOKEN e senha do dashboard **já foram rotacionados** nesta sessã
 5. **Quando credenciais Google Ads chegarem:** ~10min (não mais ~3h) seguindo `docs/guides/google-ads-oauth-setup.md` — 6 envs no n8n + 2 patches do `docs/n8n-workflows/`
 6. **Magic link auth** depende de SMTP no n8n (Gmail/Resend/Mailgun) ou pivotar para WhatsApp/Zaia
 7. **Observability no n8n** (enviar erros do workflow pro Sentry via HTTP Request) — depende do DSN
+
+---
+
+## Overnight 14→15/05 — sparklines + modo print
+
+Sessão noturna autônoma após o lote de UX polish do dia (cache.by_period funcionando).
+
+**Backend (n8n via MCP):**
+- `Calcular Metricas` agora gera `sparkline_7d: [{day, spend, leads, cpl}]` em cada `by_period[k]` — 7 pontos diários terminando no `endMs` da janela.
+- Update aplicado via `update_workflow`; **credentials Meta desvinculadas como sempre** — aguardando reconnect manual + `publish_workflow` pra cache popular.
+
+**Frontend (commitado e pushado):**
+- `Sparkline.tsx`: componente SVG inline (~50 linhas), polyline + dot no último ponto, opacity 0.55, respeita `currentColor`, viewBox responsivo.
+- `BlocoA_Hero`: 3 cards (Verba, CPL, Leads) ganham sparkline 7d alinhado à direita do delta. Resposta média não tem (cálculo per-dia é caro/ruidoso). Fallback gracioso: se `sparkline_7d` não existir, omite renderização.
+- `types.ts`: `SparklinePoint` + `PeriodSlice.sparkline_7d?` opcional.
+
+**Modo print (`@media print` no `index.css`):**
+- Fundo branco + texto preto pra impressão / "Salvar como PDF".
+- Esconde botões, inputs, overlays, dropdowns.
+- Cards perdem sombra dourada, ganham borda cinza, padding reduzido.
+- Dourado vira cinza escuro (preserva hierarquia em monocromático).
+- Semáforo success/warning/danger mantém cor (perde se monocromático mas legibilidade ok).
+- Sparklines em preto.
+- Sticky/overflow desligados pra tabelas inteiras saírem na página.
+- `@page { margin: 1.5cm }` + `page-break-inside: avoid` em cards.
+- **Atalho `Ctrl+P`** adicionado à legenda do `?` overlay.
+
+**Estado atual da entrega:**
+- ✅ Frontend buildado + commitado + pushado → Vercel autodeploy
+- ⏳ Sparklines só aparecem quando Cleiton: (a) reconectar credentials Meta nos 4 nodes HTTP, (b) avisar pra eu `publish_workflow` + `execute_workflow` mode=production
+- ✅ Modo print funcional desde o deploy (Ctrl+P em qualquer página)
 
 ---
 

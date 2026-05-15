@@ -142,6 +142,13 @@ export interface GoogleAdsBlock {
   };
 }
 
+export interface SparklinePoint {
+  day: string;
+  spend: number;
+  leads: number;
+  cpl: number;
+}
+
 export interface PeriodSlice {
   hero: HeroBlock;
   funil: FunilBlock;
@@ -149,6 +156,7 @@ export interface PeriodSlice {
   velocidade: VelocidadeBlock;
   period_label: string;
   spend_total?: number;
+  sparkline_7d?: SparklinePoint[];
 }
 
 export interface DashboardCache {

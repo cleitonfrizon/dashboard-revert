@@ -105,6 +105,7 @@ export function DashboardContainer() {
   const funilData = slice?.funil ?? data?.funil ?? null;
   const campanhasData = slice?.campanhas ?? data?.campanhas ?? null;
   const velocidadeData = slice?.velocidade ?? data?.velocidade ?? null;
+  const sparkline = slice?.sparkline_7d ?? null;
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -144,7 +145,7 @@ export function DashboardContainer() {
 
         <div className="space-y-6">
           <div className="animate-fade-in-up">
-            <BlocoA_Hero data={isChangingPeriod ? null : heroData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            <BlocoA_Hero data={isChangingPeriod ? null : heroData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} sparkline={isChangingPeriod ? null : sparkline} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-1">

@@ -1,16 +1,18 @@
 import { TrendingDown, TrendingUp, Zap, Users, Timer } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { HeroBlock } from '@/lib/types';
+import type { HeroBlock, SparklinePoint } from '@/lib/types';
 import { formatBRL, formatDelta, formatDuration, formatInt } from '@/lib/formatters';
 import { Skeleton } from './shared/Skeleton';
 import { AnimatedNumber } from './shared/AnimatedNumber';
 import { Tooltip } from './shared/Tooltip';
+import { Sparkline } from './shared/Sparkline';
 import { cn } from '@/lib/utils';
 
 interface BlocoAProps {
   data: HeroBlock | null;
   loading: boolean;
   periodLabel?: string;
+  sparkline?: SparklinePoint[] | null;
 }
 
 interface HeroCardProps {
@@ -20,9 +22,11 @@ interface HeroCardProps {
   deltaTone?: 'good' | 'bad' | 'neutral';
   icon: ReactNode;
   tooltip?: string;
+  sparkValues?: number[] | null;
+  sparkAriaLabel?: string;
 }
 
-function HeroCard({ label, value, delta, deltaTone = 'neutral', icon, tooltip }: HeroCardProps) {
+function HeroCard({ label, value, delta, deltaTone = 'neutral', icon, tooltip, sparkValues, sparkAriaLabel }: HeroCardProps) {
   const deltaColor =
     deltaTone === 'good' ? 'text-success' : deltaTone === 'bad' ? 'text-danger' : 'text-gray-300';
   return (
@@ -38,14 +42,23 @@ function HeroCard({ label, value, delta, deltaTone = 'neutral', icon, tooltip }:
         <span className="text-gold/60">{icon}</span>
       </div>
       <div className="stat-number text-4xl md:text-5xl leading-none mt-1">{value}</div>
-      {delta && (
-        <div className={cn('text-xs font-medium uppercase tracking-wider', deltaColor)}>{delta}</div>
-      )}
+      <div className="flex items-end justify-between gap-2">
+        {delta ? (
+          <div className={cn('text-xs font-medium uppercase tracking-wider', deltaColor)}>{delta}</div>
+        ) : (
+          <span />
+        )}
+        {sparkValues && sparkValues.length > 1 && (
+          <div className="text-gold ml-auto" aria-hidden={sparkAriaLabel ? undefined : true}>
+            <Sparkline values={sparkValues} ariaLabel={sparkAriaLabel} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-export function BlocoA_Hero({ data, loading, periodLabel }: BlocoAProps) {
+export function BlocoA_Hero({ data, loading, periodLabel, sparkline }: BlocoAProps) {
   if (loading && !data) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -83,6 +96,8 @@ export function BlocoA_Hero({ data, loading, periodLabel }: BlocoAProps) {
           deltaTone={spendDelta < 0 ? 'good' : spendDelta > 20 ? 'bad' : 'neutral'}
           icon={<Zap size={18} />}
           tooltip="Soma de spend Meta no período. Dados de hoje vêm de date_preset=today; histórico vem do daily breakdown."
+          sparkValues={sparkline?.map((p) => p.spend) ?? null}
+          sparkAriaLabel="Tendência de verba nos últimos 7 dias"
         />
         <HeroCard
           label="CPL"
@@ -91,6 +106,8 @@ export function BlocoA_Hero({ data, loading, periodLabel }: BlocoAProps) {
           deltaTone={cplStatusColor}
           icon={data.cpl_status === 'good' ? <TrendingDown size={18} /> : <TrendingUp size={18} />}
           tooltip="Custo por lead = Verba ÷ Leads (Reonic) no período"
+          sparkValues={sparkline?.map((p) => p.cpl) ?? null}
+          sparkAriaLabel="Tendência de CPL nos últimos 7 dias"
         />
         <HeroCard
           label="Leads"
@@ -99,6 +116,8 @@ export function BlocoA_Hero({ data, loading, periodLabel }: BlocoAProps) {
           deltaTone={leadsDelta >= 0 ? 'good' : 'bad'}
           icon={<Users size={18} />}
           tooltip="Contacts criados no Reonic no período"
+          sparkValues={sparkline?.map((p) => p.leads) ?? null}
+          sparkAriaLabel="Tendência de leads nos últimos 7 dias"
         />
         <HeroCard
           label="Resposta média"

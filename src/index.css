@@ -49,3 +49,82 @@
   .stagger-3 { animation-delay: 0.20s; }
   .stagger-4 { animation-delay: 0.28s; }
 }
+
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #0f1116 !important;
+    color-scheme: light;
+  }
+  body {
+    font-size: 11pt;
+  }
+  /* esconde controles interativos */
+  .no-print,
+  button,
+  input[type="search"],
+  header > div > div:last-child > button,
+  footer button {
+    display: none !important;
+  }
+  /* cards no print */
+  .card-escala {
+    background: #ffffff !important;
+    border: 1px solid #d0d0d0 !important;
+    color: #0f1116 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    padding: 12px !important;
+  }
+  .stat-number {
+    color: #0f1116 !important;
+    filter: none !important;
+  }
+  .section-tag {
+    color: #6b6b6b !important;
+  }
+  /* dourado vira cinza escuro pra contraste em papel */
+  .text-gold, .text-gold\/80, .text-gold\/60, .text-goldLight {
+    color: #4a4a4a !important;
+  }
+  .text-white, .text-gray-100, .text-gray-200, .text-gray-300, .text-gray-400 {
+    color: #0f1116 !important;
+  }
+  .text-gray-500 {
+    color: #5a5a5a !important;
+  }
+  /* preserva semáforo (perde se imprime monocromático mas mantém legibilidade) */
+  .text-success { color: #047857 !important; }
+  .text-warning { color: #b45309 !important; }
+  .text-danger  { color: #b91c1c !important; }
+  /* fundos */
+  .bg-navy, .bg-navyLight, .bg-surface-1, .bg-surface-2, .bg-surface-3, .bg-bgCard, .bg-black {
+    background: #ffffff !important;
+  }
+  .bg-navy.text-gold {
+    background: #f5f5f5 !important;
+    color: #0f1116 !important;
+  }
+  /* tabelas: borda visível em vez de zebra */
+  table { border-collapse: collapse !important; }
+  thead tr { border-bottom: 2px solid #0f1116 !important; }
+  tbody tr { border-bottom: 1px solid #e5e5e5 !important; }
+  /* esconde sticky/overflow */
+  .overflow-auto, .overflow-x-auto, .overflow-y-auto {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  /* sparklines em preto */
+  svg { color: #4a4a4a !important; }
+  /* hide overlays */
+  [role="dialog"], [role="tooltip"] {
+    display: none !important;
+  }
+  /* quebra de página antes de Bloco G */
+  section, .card-escala {
+    break-inside: avoid;
+  }
+  @page {
+    margin: 1.5cm;
+  }
+}
