@@ -5,10 +5,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        black: '#0A0A0A',
+        black: '#0F1116',
+        surface: {
+          DEFAULT: '#0F1116',
+          1: '#15171D',
+          2: '#1B1E26',
+          3: '#222530'
+        },
         navy: { DEFAULT: '#0D1B2A', light: '#1C2636' },
-        gold: { DEFAULT: '#C8A84E', light: '#D4B96A', dark: '#A8883A' },
-        bgCard: '#141414',
+        gold: { DEFAULT: '#C8A84E', light: '#D4B96A', dark: '#A8883A', soft: '#E8D592' },
+        bgCard: '#15171D',
         success: '#10B981',
         warning: '#F59E0B',
         danger: '#EF4444'

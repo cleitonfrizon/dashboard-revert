@@ -71,15 +71,15 @@ export function BlocoG_GoogleAds({ data, loading, sourceStatus }: Props) {
           <div className="font-display text-2xl text-gold">{formatInt(data.totals.conversions_30d)}</div>
         </div>
       </div>
-      <div className="overflow-x-auto -mx-2">
+      <div className="overflow-auto -mx-2 max-h-[400px] relative">
         <table className="w-full text-sm" aria-label="Top campanhas Google Ads">
-          <thead>
+          <thead className="sticky top-0 z-20 bg-bgCard">
             <tr className="text-xs uppercase tracking-wider text-gray-500">
-              <th scope="col" className="text-left px-2 py-2">Campanha</th>
-              <th scope="col" className="text-right px-2 py-2">Spend</th>
-              <th scope="col" className="text-right px-2 py-2">CTR</th>
-              <th scope="col" className="text-right px-2 py-2">Conv.</th>
-              <th scope="col" className="text-right px-2 py-2">CPL real</th>
+              <th scope="col" className="bg-bgCard text-left px-2 py-2">Campanha</th>
+              <th scope="col" className="bg-bgCard text-right px-2 py-2">Spend</th>
+              <th scope="col" className="bg-bgCard text-right px-2 py-2">CTR</th>
+              <th scope="col" className="bg-bgCard text-right px-2 py-2">Conv.</th>
+              <th scope="col" className="bg-bgCard text-right px-2 py-2">CPL real</th>
             </tr>
           </thead>
           <tbody>

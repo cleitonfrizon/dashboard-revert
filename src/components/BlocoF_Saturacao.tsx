@@ -47,23 +47,23 @@ export function BlocoF_Saturacao({ data, loading }: Props) {
   return (
     <Card tag="Saturação Criativa" className="xl:col-span-3">
       <h2 className="font-display text-xl text-white mb-4">Criativos ativos · últimos 7 dias</h2>
-      <div className="overflow-x-auto -mx-2">
+      <div className="overflow-auto -mx-2 max-h-[480px] relative">
         <table className="min-w-full text-sm" aria-label="Saturação de criativos">
-          <thead>
+          <thead className="sticky top-0 z-20">
             <tr className="bg-navy text-gold">
-              <th scope="col" className="px-3 py-2 text-left text-xs uppercase tracking-wider">Anúncio</th>
-              <th scope="col" className="px-3 py-2 text-left text-xs uppercase tracking-wider">Campanha</th>
-              <th scope="col" className="px-3 py-2 text-right text-xs uppercase tracking-wider">Frequência</th>
-              <th scope="col" className="px-3 py-2 text-right text-xs uppercase tracking-wider">CTR 7d</th>
-              <th scope="col" className="px-3 py-2 text-right text-xs uppercase tracking-wider">Spend</th>
-              <th scope="col" className="px-3 py-2 text-center text-xs uppercase tracking-wider">Recomendação</th>
+              <th scope="col" className="bg-navy px-3 py-2 text-left text-xs uppercase tracking-wider">Anúncio</th>
+              <th scope="col" className="bg-navy px-3 py-2 text-left text-xs uppercase tracking-wider">Campanha</th>
+              <th scope="col" className="bg-navy px-3 py-2 text-right text-xs uppercase tracking-wider">Frequência</th>
+              <th scope="col" className="bg-navy px-3 py-2 text-right text-xs uppercase tracking-wider">CTR 7d</th>
+              <th scope="col" className="bg-navy px-3 py-2 text-right text-xs uppercase tracking-wider">Spend</th>
+              <th scope="col" className="bg-navy px-3 py-2 text-center text-xs uppercase tracking-wider">Recomendação</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((row, idx) => {
               const tone = RECOMMENDATION_TONE[row.recommendation];
               return (
-                <tr key={row.ad_id || idx} className={cn(idx % 2 === 0 ? 'bg-bgCard' : 'bg-[#1A1A1A]')}>
+                <tr key={row.ad_id || idx} className={cn(idx % 2 === 0 ? 'bg-surface-1' : 'bg-surface-2', 'hover:bg-surface-3 transition-colors')}>
                   <td className="px-3 py-2 max-w-[280px] truncate text-gray-200" title={row.ad_name}>
                     {row.ad_name || '—'}
                   </td>
