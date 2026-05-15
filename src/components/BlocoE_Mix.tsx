@@ -63,7 +63,21 @@ export function BlocoE_Mix({ data, loading }: Props) {
           icon={<Sun size={32} />}
           title="Sem vendas nos últimos 30 dias"
           description="Quando offers fecharem (state=Won), o mix por produto (solar/armazenamento/bomba de calor/wallbox) aparece aqui automaticamente."
-          hint="Source: campos solarPackage / sesPackage / heatpumpPackage / wallboxPackage do Reonic"
+          hint="Source: solarPackage / sesPackage / heatpumpPackage / wallboxPackage do Reonic"
+        />
+      </Card>
+    );
+  }
+
+  const totalProductsClassified = data.solar.count + data.armazenamento.count + data.bomba_calor.count + data.wallbox.count;
+  if (data.total_won_30d > 0 && totalProductsClassified === 0) {
+    return (
+      <Card tag="Mix de Produto · 30d">
+        <EmptyState
+          icon={<Sun size={32} />}
+          title={`${formatInt(data.total_won_30d)} ${data.total_won_30d === 1 ? 'venda fechada' : 'vendas fechadas'} sem classificação técnica`}
+          description="As offers no Reonic não têm solarPackage / sesPackage / heatpumpPackage / wallboxPackage preenchidos. Se a equipe registrar esses campos no painel da Revert, o mix por produto aparece aqui automaticamente."
+          hint="Q-pendente · padronizar preenchimento dos packages no Reonic"
         />
       </Card>
     );
