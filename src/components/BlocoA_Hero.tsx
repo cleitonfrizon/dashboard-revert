@@ -1,4 +1,4 @@
-import { TrendingDown, TrendingUp, Zap, Users, Timer, Target, DollarSign, Award, Receipt } from 'lucide-react';
+import { TrendingDown, TrendingUp, Zap, Users, Timer, Target, DollarSign, Award, Receipt, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { HeroBlock, SparklinePoint } from '@/lib/types';
 import { formatBRL, formatDelta, formatDuration, formatInt } from '@/lib/formatters';
@@ -55,7 +55,16 @@ function HeroCard({ label, value, delta, deltaTone = 'neutral', icon, tooltip, s
         ) : (
           <span className="section-tag">{label}</span>
         )}
-        <span className="text-gold/60">{icon}</span>
+        <span className="flex items-center gap-1.5 text-gold/60">
+          {hasDetails && (
+            <ChevronDown
+              size={12}
+              className="text-gold/30 transition-transform duration-200 group-hover:text-gold/70 group-hover:rotate-180 group-focus-within:text-gold/70 group-focus-within:rotate-180 motion-reduce:transition-none"
+              aria-hidden="true"
+            />
+          )}
+          {icon}
+        </span>
       </div>
       <div className="stat-number text-4xl md:text-5xl leading-none mt-1">{value}</div>
       <div className="flex items-end justify-between gap-2">
