@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Search, X } from 'lucide-react';
 import type { AdChannel, CampanhaRow } from '@/lib/types';
 import { formatBRL, formatInt, formatPct } from '@/lib/formatters';
 import { Card } from './shared/Card';
 import { TableSkeleton } from './shared/TableSkeleton';
 import { EmptyState } from './shared/EmptyState';
+import { Tooltip } from './shared/Tooltip';
 import { addBreadcrumb } from '@/lib/sentry';
 import { cn } from '@/lib/utils';
 
@@ -22,17 +23,17 @@ type SortKey = keyof Pick<
 type SortDir = 'asc' | 'desc';
 type ChannelFilter = 'all' | AdChannel;
 
-const COLS: Array<{ key: SortKey; label: string; align?: 'right'; format?: (v: number | string) => string }> = [
+const COLS: Array<{ key: SortKey; label: string; align?: 'right'; format?: (v: number | string) => string; tooltip?: string }> = [
   { key: 'name', label: 'Campanha' },
-  { key: 'impressions', label: 'Impressões', align: 'right', format: (v) => formatInt(Number(v)) },
-  { key: 'ctr', label: 'CTR', align: 'right', format: (v) => formatPct(Number(v), 2) },
-  { key: 'conversas_meta', label: 'Convers. Plat.', align: 'right', format: (v) => formatInt(Number(v)) },
-  { key: 'leads_reonic', label: 'Leads Reonic', align: 'right', format: (v) => formatInt(Number(v)) },
-  { key: 'cpl_real', label: 'CPL real', align: 'right', format: (v) => formatBRL(Number(v)) },
-  { key: 'mql', label: 'MQL', align: 'right', format: (v) => formatInt(Number(v)) },
-  { key: 'cac', label: 'CAC', align: 'right', format: (v) => formatBRL(Number(v)) },
-  { key: 'ticket_medio_realizado', label: 'Ticket médio', align: 'right', format: (v) => formatBRL(Number(v)) },
-  { key: 'spend', label: 'Spend', align: 'right', format: (v) => formatBRL(Number(v)) },
+  { key: 'impressions', label: 'Impressões', align: 'right', format: (v) => formatInt(Number(v)), tooltip: 'Soma de impressões da Meta Ads no período' },
+  { key: 'ctr', label: 'CTR', align: 'right', format: (v) => formatPct(Number(v), 2), tooltip: 'Click-through rate = cliques ÷ impressões' },
+  { key: 'conversas_meta', label: 'Convers. Plat.', align: 'right', format: (v) => formatInt(Number(v)), tooltip: 'Conversões reportadas pela plataforma Meta (lead_grouped + messaging)' },
+  { key: 'leads_reonic', label: 'Leads Reonic', align: 'right', format: (v) => formatInt(Number(v)), tooltip: 'Contacts do Reonic com utmCampaign que bate com o nome da campanha' },
+  { key: 'cpl_real', label: 'CPL real', align: 'right', format: (v) => formatBRL(Number(v)), tooltip: 'Spend ÷ Leads Reonic (fonte de verdade do funil)' },
+  { key: 'mql', label: 'MQL', align: 'right', format: (v) => formatInt(Number(v)), tooltip: 'Marketing Qualified Leads = contacts que viraram offer (proposta gerada)' },
+  { key: 'cac', label: 'CAC', align: 'right', format: (v) => formatBRL(Number(v)), tooltip: 'Custo de aquisição = Spend ÷ vendas fechadas (state=Won)' },
+  { key: 'ticket_medio_realizado', label: 'Ticket médio', align: 'right', format: (v) => formatBRL(Number(v)), tooltip: 'Média de totalPlannedPrice das offers fechadas no período' },
+  { key: 'spend', label: 'Spend', align: 'right', format: (v) => formatBRL(Number(v)), tooltip: 'Verba investida nessa campanha no período' },
 ];
 
 function ChannelPill({ channel }: { channel: AdChannel }) {
@@ -54,6 +55,7 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('spend');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const channels = useMemo(() => {
     if (!data) return new Set<AdChannel>();
@@ -62,7 +64,9 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
 
   const rows = useMemo(() => {
     if (!data) return [];
-    const filtered = channelFilter === 'all' ? data : data.filter((r) => (r.channel ?? 'meta') === channelFilter);
+    const byChannel = channelFilter === 'all' ? data : data.filter((r) => (r.channel ?? 'meta') === channelFilter);
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = q ? byChannel.filter((r) => r.name.toLowerCase().includes(q)) : byChannel;
     const copy = [...filtered];
     copy.sort((a, b) => {
       const va = a[sortKey];
@@ -73,7 +77,7 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return copy;
-  }, [data, sortKey, sortDir, channelFilter]);
+  }, [data, sortKey, sortDir, channelFilter, searchQuery]);
 
   const totals = useMemo(() => {
     if (!rows.length) return null;
@@ -118,6 +122,34 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
 
   return (
     <Card tag={`Performance por Campanha · ${periodLabel ?? 'Últimos 7 dias'}`} className="xl:col-span-3">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="relative flex-1 max-w-md">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" aria-hidden="true" />
+          <input
+            type="search"
+            placeholder="Buscar campanha…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Buscar campanha por nome"
+            className="w-full pl-8 pr-8 py-1.5 text-xs bg-surface-1 border border-gold/15 rounded text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/30"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              aria-label="Limpar busca"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gold"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <span className="text-[11px] text-gray-500 tabular-nums">
+            {rows.length} {rows.length === 1 ? 'resultado' : 'resultados'}
+          </span>
+        )}
+      </div>
       {showFilter && (
         <div role="group" aria-label="Filtrar por canal" className="flex items-center gap-2 mb-3">
           <span className="text-[11px] uppercase tracking-wider text-gray-500">Canal:</span>
@@ -147,11 +179,42 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
           })}
         </div>
       )}
-      <div className="overflow-x-auto -mx-2">
-        <table className="min-w-full text-sm" aria-label="Performance por campanha">
-          <thead>
+
+      <div className="md:hidden space-y-2.5">
+        {rows.map((r) => (
+          <div key={`mobile-${r.id}`} className="border border-gold/10 rounded-md p-3 bg-surface-1">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="text-sm text-gray-100 truncate flex-1" title={r.name}>{r.name}</div>
+              <ChannelPill channel={r.channel ?? 'meta'} />
+            </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs tabular-nums">
+              <div className="flex justify-between"><span className="text-gray-500">Spend</span><span className="text-gold font-medium">{formatBRL(r.spend)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Leads</span><span className="text-gray-200">{formatInt(r.leads_reonic)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">CTR</span><span className="text-gray-200">{formatPct(r.ctr * 100, 2)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">CPL real</span><span className="text-gray-200">{formatBRL(r.cpl_real)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">MQL</span><span className="text-gray-200">{formatInt(r.mql)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">CAC</span><span className="text-gray-200">{formatBRL(r.cac)}</span></div>
+            </div>
+          </div>
+        ))}
+        {totals && (
+          <div className="border border-gold/30 rounded-md p-3 bg-navyLight text-gold">
+            <div className="text-xs uppercase tracking-wider font-semibold mb-2">Total</div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs tabular-nums">
+              <div className="flex justify-between"><span className="opacity-70">Spend</span><span className="font-semibold">{formatBRL(totals.spend)}</span></div>
+              <div className="flex justify-between"><span className="opacity-70">Leads</span><span>{formatInt(totals.leads_reonic)}</span></div>
+              <div className="flex justify-between"><span className="opacity-70">Impressões</span><span>{formatInt(totals.impressions)}</span></div>
+              <div className="flex justify-between"><span className="opacity-70">MQL</span><span>{formatInt(totals.mql)}</span></div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="hidden md:block overflow-auto -mx-2 max-h-[520px] relative">
+        <table className="min-w-full text-sm border-separate border-spacing-0" aria-label="Performance por campanha">
+          <thead className="sticky top-0 z-20">
             <tr className="bg-navy text-gold">
-              <th scope="col" className="px-3 py-2 text-xs uppercase tracking-wider font-medium text-left whitespace-nowrap">Canal</th>
+              <th scope="col" className="sticky left-0 z-30 bg-navy px-3 py-2 text-xs uppercase tracking-wider font-medium text-left whitespace-nowrap shadow-[1px_0_0_0_rgba(200,168,78,0.15)]">Canal</th>
               {COLS.map((c) => {
                 const active = sortKey === c.key;
                 const Icon = !active ? ArrowUpDown : sortDir === 'asc' ? ArrowUp : ArrowDown;
@@ -164,7 +227,7 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
                     scope="col"
                     aria-sort={ariaSort}
                     className={cn(
-                      'px-3 py-2 text-xs uppercase tracking-wider font-medium whitespace-nowrap',
+                      'bg-navy px-3 py-2 text-xs uppercase tracking-wider font-medium whitespace-nowrap',
                       c.align === 'right' ? 'text-right' : 'text-left',
                       active && 'text-goldLight'
                     )}
@@ -178,7 +241,13 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
                         c.align === 'right' && 'ml-auto'
                       )}
                     >
-                      {c.label}
+                      {c.tooltip ? (
+                        <Tooltip content={c.tooltip} side="bottom">
+                          <span className="cursor-help underline decoration-dotted decoration-gold/30 underline-offset-2">{c.label}</span>
+                        </Tooltip>
+                      ) : (
+                        c.label
+                      )}
                       <Icon size={12} className={active ? 'opacity-100' : 'opacity-40'} aria-hidden="true" />
                     </button>
                   </th>
@@ -187,34 +256,37 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, idx) => (
-              <tr key={r.id} className={cn(idx % 2 === 0 ? 'bg-bgCard' : 'bg-[#1A1A1A]')}>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  <ChannelPill channel={r.channel ?? 'meta'} />
-                </td>
-                {COLS.map((c) => {
-                  const raw = r[c.key];
-                  const display = c.format ? c.format(raw as number) : String(raw);
-                  return (
-                    <td
-                      key={c.key}
-                      className={cn(
-                        'px-3 py-2 whitespace-nowrap tabular-nums',
-                        c.align === 'right' ? 'text-right' : 'text-left',
-                        c.key === 'name' && 'max-w-[280px] truncate text-gray-200',
-                        c.key === 'spend' && 'text-gold font-medium'
-                      )}
-                      title={c.key === 'name' ? String(raw) : undefined}
-                    >
-                      {display}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+            {rows.map((r, idx) => {
+              const rowBg = idx % 2 === 0 ? 'bg-surface-1' : 'bg-surface-2';
+              return (
+                <tr key={r.id} className={cn(rowBg, 'hover:bg-surface-3 transition-colors')}>
+                  <td className={cn('sticky left-0 z-10 px-3 py-2 whitespace-nowrap shadow-[1px_0_0_0_rgba(200,168,78,0.08)]', rowBg)}>
+                    <ChannelPill channel={r.channel ?? 'meta'} />
+                  </td>
+                  {COLS.map((c) => {
+                    const raw = r[c.key];
+                    const display = c.format ? c.format(raw as number) : String(raw);
+                    return (
+                      <td
+                        key={c.key}
+                        className={cn(
+                          'px-3 py-2 whitespace-nowrap tabular-nums',
+                          c.align === 'right' ? 'text-right' : 'text-left',
+                          c.key === 'name' && 'max-w-[280px] truncate text-gray-200',
+                          c.key === 'spend' && 'text-gold font-medium'
+                        )}
+                        title={c.key === 'name' ? String(raw) : undefined}
+                      >
+                        {display}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
             {totals && (
               <tr className="border-t border-gold/20 bg-navyLight text-gold">
-                <td className="px-3 py-2"></td>
+                <td className="sticky left-0 z-10 bg-navyLight px-3 py-2 shadow-[1px_0_0_0_rgba(200,168,78,0.15)]"></td>
                 <td className="px-3 py-2 text-xs uppercase tracking-wider font-semibold">Total</td>
                 <td className="px-3 py-2 text-right tabular-nums">{formatInt(totals.impressions)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">—</td>

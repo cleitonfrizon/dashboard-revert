@@ -40,8 +40,20 @@ function readStoredPeriod(): PeriodPreset {
 
 export function DashboardContainer() {
   const { data, loading, error, refresh } = useDashboardData();
-  const [period, setPeriod] = useState<PeriodPreset>(readStoredPeriod);
+  const [period, setPeriodRaw] = useState<PeriodPreset>(readStoredPeriod);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [isChangingPeriod, setIsChangingPeriod] = useState(false);
+
+  const setPeriod = useCallback((next: PeriodPreset | ((p: PeriodPreset) => PeriodPreset)) => {
+    setPeriodRaw((current) => {
+      const resolved = typeof next === 'function' ? next(current) : next;
+      if (resolved !== current) {
+        setIsChangingPeriod(true);
+        window.setTimeout(() => setIsChangingPeriod(false), 280);
+      }
+      return resolved;
+    });
+  }, []);
 
   useEffect(() => {
     try {
@@ -132,20 +144,20 @@ export function DashboardContainer() {
 
         <div className="space-y-6">
           <div className="animate-fade-in-up">
-            <BlocoA_Hero data={heroData} loading={loading} periodLabel={PERIOD_LABELS[period]} />
+            <BlocoA_Hero data={isChangingPeriod ? null : heroData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-1">
-            <BlocoB_Funil data={funilData} loading={loading} periodLabel={PERIOD_LABELS[period]} />
+            <BlocoB_Funil data={isChangingPeriod ? null : funilData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
             <BlocoE_Mix data={data?.mix_produto ?? null} loading={loading} />
           </div>
 
           <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-2">
-            <BlocoC_Campanhas data={campanhasData} loading={loading} periodLabel={PERIOD_LABELS[period]} />
+            <BlocoC_Campanhas data={isChangingPeriod ? null : campanhasData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-3">
-            <BlocoD_Velocidade data={velocidadeData} loading={loading} periodLabel={PERIOD_LABELS[period]} />
+            <BlocoD_Velocidade data={isChangingPeriod ? null : velocidadeData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
             <BlocoF_Saturacao data={data?.saturacao ?? null} loading={loading} />
           </div>
 

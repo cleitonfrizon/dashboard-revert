@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import type { HeroBlock } from '@/lib/types';
 import { formatBRL, formatDelta, formatDuration, formatInt } from '@/lib/formatters';
 import { Skeleton } from './shared/Skeleton';
+import { AnimatedNumber } from './shared/AnimatedNumber';
+import { Tooltip } from './shared/Tooltip';
 import { cn } from '@/lib/utils';
 
 interface BlocoAProps {
@@ -17,15 +19,22 @@ interface HeroCardProps {
   delta?: string;
   deltaTone?: 'good' | 'bad' | 'neutral';
   icon: ReactNode;
+  tooltip?: string;
 }
 
-function HeroCard({ label, value, delta, deltaTone = 'neutral', icon }: HeroCardProps) {
+function HeroCard({ label, value, delta, deltaTone = 'neutral', icon, tooltip }: HeroCardProps) {
   const deltaColor =
     deltaTone === 'good' ? 'text-success' : deltaTone === 'bad' ? 'text-danger' : 'text-gray-300';
   return (
     <div className="card-escala flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="section-tag">{label}</span>
+        {tooltip ? (
+          <Tooltip content={tooltip} side="bottom">
+            <span className="section-tag cursor-help underline decoration-dotted decoration-gold/30 underline-offset-2">{label}</span>
+          </Tooltip>
+        ) : (
+          <span className="section-tag">{label}</span>
+        )}
         <span className="text-gold/60">{icon}</span>
       </div>
       <div className="stat-number text-4xl md:text-5xl leading-none mt-1">{value}</div>
@@ -69,28 +78,31 @@ export function BlocoA_Hero({ data, loading, periodLabel }: BlocoAProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <HeroCard
           label="Verba"
-          value={formatBRL(data.spend_today)}
+          value={<AnimatedNumber value={data.spend_today} format={formatBRL} />}
           delta={`${formatDelta(spendDelta)} vs período anterior`}
           deltaTone={spendDelta < 0 ? 'good' : spendDelta > 20 ? 'bad' : 'neutral'}
           icon={<Zap size={18} />}
+          tooltip="Soma de spend Meta no período. Dados de hoje vêm de date_preset=today; histórico vem do daily breakdown."
         />
         <HeroCard
           label="CPL"
-          value={formatBRL(data.cpl_today)}
+          value={<AnimatedNumber value={data.cpl_today} format={formatBRL} />}
           delta={`Período anterior ${formatBRL(data.cpl_7d_avg)}`}
           deltaTone={cplStatusColor}
           icon={data.cpl_status === 'good' ? <TrendingDown size={18} /> : <TrendingUp size={18} />}
+          tooltip="Custo por lead = Verba ÷ Leads (Reonic) no período"
         />
         <HeroCard
           label="Leads"
-          value={formatInt(data.leads_today)}
+          value={<AnimatedNumber value={data.leads_today} format={formatInt} />}
           delta={`Anterior ${formatInt(data.leads_yesterday)} · ${formatDelta(leadsDelta)}`}
           deltaTone={leadsDelta >= 0 ? 'good' : 'bad'}
           icon={<Users size={18} />}
+          tooltip="Contacts criados no Reonic no período"
         />
         <HeroCard
           label="Resposta média"
-          value={formatDuration(data.avg_response_time_today_sec)}
+          value={<AnimatedNumber value={data.avg_response_time_today_sec} format={formatDuration} />}
           delta={data.avg_response_time_today_sec > 0 ? 'Lead → 1º contato' : 'Sem lead no período'}
           deltaTone={
             data.avg_response_time_today_sec === 0
@@ -102,6 +114,7 @@ export function BlocoA_Hero({ data, loading, periodLabel }: BlocoAProps) {
                   : 'bad'
           }
           icon={<Timer size={18} />}
+          tooltip="Tempo entre criação do contact e primeira nota humana (ou proposta) no offer correspondente"
         />
       </div>
     </section>

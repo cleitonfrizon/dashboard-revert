@@ -1,9 +1,20 @@
 import { useEffect, useState } from 'react';
-import { LogOut, RefreshCw } from 'lucide-react';
+import { AlertTriangle, LogOut, RefreshCw } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/formatters';
 import { useAuth } from '@/hooks/useAuth';
 import { SourceStatusPills } from './SourceStatusPills';
+import { cn } from '@/lib/utils';
 import type { CacheMeta } from '@/lib/types';
+
+function staleness(generatedAt: string | null | undefined): 'fresh' | 'stale' | 'broken' {
+  if (!generatedAt) return 'fresh';
+  const t = new Date(generatedAt).getTime();
+  if (!Number.isFinite(t)) return 'fresh';
+  const minutes = (Date.now() - t) / 60000;
+  if (minutes > 60) return 'broken';
+  if (minutes > 35) return 'stale';
+  return 'fresh';
+}
 
 export interface HeaderProps {
   generatedAt: string | null | undefined;
@@ -39,10 +50,25 @@ export function Header({ generatedAt, sourcesStatus, onRefresh, loading }: Heade
         </div>
         <div className="flex items-center gap-3">
           <SourceStatusPills sourcesStatus={sourcesStatus} />
-          <div className="hidden md:flex flex-col items-end text-xs text-gray-500 leading-tight">
-            <span className="uppercase tracking-wider">Atualizado</span>
-            <span className="text-gold">{formatRelativeTime(generatedAt)}</span>
-          </div>
+          {(() => {
+            const state = staleness(generatedAt);
+            const isWarn = state === 'stale';
+            const isBroken = state === 'broken';
+            return (
+              <div className="hidden md:flex flex-col items-end text-xs leading-tight">
+                <span className={cn(
+                  'uppercase tracking-wider flex items-center gap-1',
+                  isBroken ? 'text-danger' : isWarn ? 'text-warning' : 'text-gray-500'
+                )}>
+                  {(isWarn || isBroken) && <AlertTriangle size={11} aria-hidden="true" />}
+                  {isBroken ? 'Pipeline parado' : isWarn ? 'Atrasado' : 'Atualizado'}
+                </span>
+                <span className={cn(
+                  isBroken ? 'text-danger font-semibold' : isWarn ? 'text-warning font-semibold' : 'text-gold'
+                )}>{formatRelativeTime(generatedAt)}</span>
+              </div>
+            );
+          })()}
           <button
             type="button"
             onClick={onRefresh}
