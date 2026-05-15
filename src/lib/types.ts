@@ -29,6 +29,42 @@ export interface HeroBlock {
   leads_today: number;
   leads_yesterday: number;
   avg_response_time_today_sec: number;
+  cac?: number;
+  roas?: number;
+  vendas_count?: number;
+  vendas_revenue?: number;
+  ticket_medio_realizado?: number;
+}
+
+export interface PipelineBlock {
+  open_count: number;
+  open_revenue: number;
+  win_rate: number;
+  avg_cycle_days: number;
+  forecast_count: number;
+  forecast_revenue: number;
+  won_count: number;
+  lost_count: number;
+}
+
+export interface LossReasonItem {
+  reason: string;
+  count: number;
+  pct: number;
+  revenue_lost: number;
+}
+
+export interface LossReasonsBlock {
+  items: LossReasonItem[];
+  total_lost: number;
+}
+
+export interface MixSolarBlock {
+  total_won_30d: number;
+  solar: { count: number; total_kwp: number; total_modules: number; avg_kwp: number };
+  armazenamento: { count: number };
+  bomba_calor: { count: number };
+  wallbox: { count: number };
 }
 
 export interface FunilBlock {
@@ -157,6 +193,8 @@ export interface PeriodSlice {
   period_label: string;
   spend_total?: number;
   sparkline_7d?: SparklinePoint[];
+  pipeline?: PipelineBlock;
+  loss_reasons?: LossReasonsBlock;
 }
 
 export interface DashboardCache {
@@ -166,6 +204,7 @@ export interface DashboardCache {
   campanhas: CampanhaRow[];
   velocidade: VelocidadeBlock;
   mix_produto: MixProdutoRow[] | null;
+  mix_solar?: MixSolarBlock;
   saturacao: SaturacaoRow[];
   google_ads?: GoogleAdsBlock | null;
   by_period?: Record<PeriodPreset, PeriodSlice>;

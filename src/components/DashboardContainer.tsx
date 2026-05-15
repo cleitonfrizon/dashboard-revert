@@ -10,6 +10,8 @@ import { BlocoD_Velocidade } from './BlocoD_Velocidade';
 import { BlocoE_Mix } from './BlocoE_Mix';
 import { BlocoF_Saturacao } from './BlocoF_Saturacao';
 import { BlocoG_GoogleAds } from './BlocoG_GoogleAds';
+import { BlocoH_Pipeline } from './BlocoH_Pipeline';
+import { BlocoI_LossReasons } from './BlocoI_LossReasons';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { googleAdsSampleFixture } from '@/lib/fixtures/googleAdsSample';
@@ -106,6 +108,9 @@ export function DashboardContainer() {
   const campanhasData = slice?.campanhas ?? data?.campanhas ?? null;
   const velocidadeData = slice?.velocidade ?? data?.velocidade ?? null;
   const sparkline = slice?.sparkline_7d ?? null;
+  const pipelineData = slice?.pipeline ?? null;
+  const lossReasonsData = slice?.loss_reasons ?? null;
+  const mixSolarData = data?.mix_solar ?? null;
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -148,12 +153,16 @@ export function DashboardContainer() {
             <BlocoA_Hero data={isChangingPeriod ? null : heroData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} sparkline={isChangingPeriod ? null : sparkline} />
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-1">
-            <BlocoB_Funil data={isChangingPeriod ? null : funilData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
-            <BlocoE_Mix data={data?.mix_produto ?? null} loading={loading} />
+          <div className="animate-fade-in-up stagger-1">
+            <BlocoH_Pipeline data={isChangingPeriod ? null : pipelineData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
           </div>
 
-          <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-2">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-2">
+            <BlocoB_Funil data={isChangingPeriod ? null : funilData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            <BlocoE_Mix data={mixSolarData} loading={loading} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-3">
             <BlocoC_Campanhas data={isChangingPeriod ? null : campanhasData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
           </div>
 
@@ -162,17 +171,20 @@ export function DashboardContainer() {
             <BlocoF_Saturacao data={data?.saturacao ?? null} loading={loading} />
           </div>
 
-          <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-4">
-            {isGooglePreview && (
-              <div className="text-[10px] uppercase tracking-[0.2em] text-gold/60 border border-gold/20 bg-gold/5 px-3 py-1.5 rounded">
-                Preview com dados sintéticos · remova ?preview=google da URL pra ver o estado real
-              </div>
-            )}
-            <BlocoG_GoogleAds
-              data={googleAdsBlock}
-              loading={loading && !isGooglePreview}
-              sourceStatus={googleAdsStatus}
-            />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 animate-fade-in-up stagger-4">
+            <BlocoI_LossReasons data={isChangingPeriod ? null : lossReasonsData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            <div>
+              {isGooglePreview && (
+                <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-gold/60 border border-gold/20 bg-gold/5 px-3 py-1.5 rounded">
+                  Preview sintético · remova ?preview=google da URL
+                </div>
+              )}
+              <BlocoG_GoogleAds
+                data={googleAdsBlock}
+                loading={loading && !isGooglePreview}
+                sourceStatus={googleAdsStatus}
+              />
+            </div>
           </div>
         </div>
       </main>
