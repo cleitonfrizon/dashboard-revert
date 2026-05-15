@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Search, X, Download } from 'lucide-react';
+import { rowsToCsv, downloadCsv } from '@/lib/csv';
 import type { AdChannel, CampanhaRow } from '@/lib/types';
 import { formatBRL, formatInt, formatPct } from '@/lib/formatters';
 import { Card } from './shared/Card';
@@ -51,10 +52,13 @@ function ChannelPill({ channel }: { channel: AdChannel }) {
   );
 }
 
+type StatusFilter = 'all' | 'ACTIVE' | 'PAUSED';
+
 export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('spend');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const channels = useMemo(() => {
@@ -62,11 +66,17 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
     return new Set(data.map((r) => r.channel ?? 'meta'));
   }, [data]);
 
+  const statuses = useMemo(() => {
+    if (!data) return new Set<string>();
+    return new Set(data.map((r) => String(r.status || '').toUpperCase()));
+  }, [data]);
+
   const rows = useMemo(() => {
     if (!data) return [];
     const byChannel = channelFilter === 'all' ? data : data.filter((r) => (r.channel ?? 'meta') === channelFilter);
+    const byStatus = statusFilter === 'all' ? byChannel : byChannel.filter((r) => String(r.status || '').toUpperCase() === statusFilter);
     const q = searchQuery.trim().toLowerCase();
-    const filtered = q ? byChannel.filter((r) => r.name.toLowerCase().includes(q)) : byChannel;
+    const filtered = q ? byStatus.filter((r) => r.name.toLowerCase().includes(q)) : byStatus;
     const copy = [...filtered];
     copy.sort((a, b) => {
       const va = a[sortKey];
@@ -77,7 +87,7 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return copy;
-  }, [data, sortKey, sortDir, channelFilter, searchQuery]);
+  }, [data, sortKey, sortDir, channelFilter, statusFilter, searchQuery]);
 
   const totals = useMemo(() => {
     if (!rows.length) return null;
@@ -119,11 +129,18 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
   };
 
   const showFilter = channels.size > 1;
+  const knownStatuses = useMemo(() => {
+    const s = new Set<StatusFilter>();
+    if (statuses.has('ACTIVE')) s.add('ACTIVE');
+    if (statuses.has('PAUSED')) s.add('PAUSED');
+    return s;
+  }, [statuses]);
+  const showStatusFilter = knownStatuses.size > 1;
 
   return (
     <Card tag={`Performance por Campanha · ${periodLabel ?? 'Últimos 7 dias'}`} className="xl:col-span-3">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <div className="relative flex-1 min-w-[180px] max-w-md">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" aria-hidden="true" />
           <input
             type="search"
@@ -149,34 +166,97 @@ export function BlocoC_Campanhas({ data, loading, periodLabel }: Props) {
             {rows.length} {rows.length === 1 ? 'resultado' : 'resultados'}
           </span>
         )}
+        <button
+          type="button"
+          onClick={() => {
+            const exportCols = [
+              { key: 'channel', label: 'Canal' },
+              ...COLS.map((c) => ({ key: c.key, label: c.label })),
+            ];
+            const exportRows = rows.map((r) => ({
+              channel: r.channel ?? 'meta',
+              ...COLS.reduce((acc, c) => {
+                const v = r[c.key];
+                acc[c.key] = typeof v === 'number' ? v.toFixed(2).replace('.', ',') : v;
+                return acc;
+              }, {} as Record<string, unknown>),
+            }));
+            const csv = rowsToCsv(exportRows, exportCols);
+            const periodSlug = (periodLabel ?? '30d').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            const today = new Date().toISOString().slice(0, 10);
+            downloadCsv(`campanhas-revert-${periodSlug}-${today}.csv`, csv);
+          }}
+          aria-label="Exportar campanhas como CSV"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] uppercase tracking-wider rounded border border-gold/25 text-gray-300 hover:border-gold/50 hover:text-gold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 ml-auto no-print"
+          title="Exportar campanhas atuais como CSV"
+        >
+          <Download size={12} aria-hidden="true" />
+          CSV
+        </button>
       </div>
-      {showFilter && (
-        <div role="group" aria-label="Filtrar por canal" className="flex items-center gap-2 mb-3">
-          <span className="text-[11px] uppercase tracking-wider text-gray-500">Canal:</span>
-          {(['all', 'meta', 'google'] as ChannelFilter[]).map((opt) => {
-            if (opt !== 'all' && !channels.has(opt)) return null;
-            const active = channelFilter === opt;
-            const label = opt === 'all' ? 'Todos' : opt === 'meta' ? 'Meta' : 'Google';
-            return (
-              <button
-                key={opt}
-                type="button"
-                aria-pressed={active}
-                onClick={() => {
-                  setChannelFilter(opt);
-                  addBreadcrumb({ category: 'ui.filter', message: 'channel_filter', data: { value: opt } });
-                }}
-                className={cn(
-                  'px-3 py-1 text-xs uppercase tracking-wider rounded border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60',
-                  active
-                    ? 'border-gold/60 text-gold bg-gold/10'
-                    : 'border-gold/15 text-gray-400 hover:border-gold/30 hover:text-gold'
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
+      {(showFilter || showStatusFilter) && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-3">
+          {showFilter && (
+            <div role="group" aria-label="Filtrar por canal" className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-wider text-gray-500">Canal:</span>
+              {(['all', 'meta', 'google'] as ChannelFilter[]).map((opt) => {
+                if (opt !== 'all' && !channels.has(opt)) return null;
+                const active = channelFilter === opt;
+                const label = opt === 'all' ? 'Todos' : opt === 'meta' ? 'Meta' : 'Google';
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setChannelFilter(opt);
+                      addBreadcrumb({ category: 'ui.filter', message: 'channel_filter', data: { value: opt } });
+                    }}
+                    className={cn(
+                      'px-3 py-1 text-xs uppercase tracking-wider rounded border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60',
+                      active
+                        ? 'border-gold/60 text-gold bg-gold/10'
+                        : 'border-gold/15 text-gray-400 hover:border-gold/30 hover:text-gold'
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {showStatusFilter && (
+            <div role="group" aria-label="Filtrar por status" className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-wider text-gray-500">Status:</span>
+              {(['all', 'ACTIVE', 'PAUSED'] as StatusFilter[]).map((opt) => {
+                if (opt !== 'all' && !knownStatuses.has(opt)) return null;
+                const active = statusFilter === opt;
+                const label = opt === 'all' ? 'Todos' : opt === 'ACTIVE' ? 'Ativas' : 'Pausadas';
+                const isPaused = opt === 'PAUSED';
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      setStatusFilter(opt);
+                      addBreadcrumb({ category: 'ui.filter', message: 'status_filter', data: { value: opt } });
+                    }}
+                    className={cn(
+                      'px-3 py-1 text-xs uppercase tracking-wider rounded border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60',
+                      active
+                        ? isPaused
+                          ? 'border-warning/60 text-warning bg-warning/10'
+                          : 'border-gold/60 text-gold bg-gold/10'
+                        : 'border-gold/15 text-gray-400 hover:border-gold/30 hover:text-gold'
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

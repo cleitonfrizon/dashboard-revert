@@ -8,6 +8,7 @@ export interface ShortcutHandlers {
   onPeriodMes?: () => void;
   onToggleHelp?: () => void;
   onCloseHelp?: () => void;
+  onToggleFullscreen?: () => void;
   enabled?: boolean;
 }
 
@@ -27,6 +28,7 @@ export function useKeyboardShortcuts({
   onPeriodMes,
   onToggleHelp,
   onCloseHelp,
+  onToggleFullscreen,
   enabled = true,
 }: ShortcutHandlers) {
   useEffect(() => {
@@ -59,9 +61,12 @@ export function useKeyboardShortcuts({
       } else if (k === '4') {
         e.preventDefault();
         onPeriodMes?.();
+      } else if (k === 'f') {
+        e.preventDefault();
+        onToggleFullscreen?.();
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [enabled, onRefresh, onPeriodHoje, onPeriod7d, onPeriod30d, onPeriodMes, onToggleHelp, onCloseHelp]);
+  }, [enabled, onRefresh, onPeriodHoje, onPeriod7d, onPeriod30d, onPeriodMes, onToggleHelp, onCloseHelp, onToggleFullscreen]);
 }

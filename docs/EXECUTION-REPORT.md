@@ -1,10 +1,10 @@
 # Execution Report — Dashboard de BI Revert
 
-**Última atualização:** 2026-05-15 (overnight 14→15/05)
+**Última atualização:** 2026-05-14 (overnight 2 — pacote Solar PRO completo)
 **Status produção:** ✅ Operacional (HTTP 200)
 **Tag MVP:** `v1.0.0-mvp` (12/05/2026)
-**Último commit em main (remoto):** `8ec8df8` (14/05/2026)
-**Commits locais (overnight 15/05):** 1 commit aguardando push após Cleiton reconectar credentials Meta no n8n (sparklines no Hero)
+**Último commit em main (remoto):** `f1c2f6f` (Bloco Mix detecta packages vazios no Reonic)
+**Commits locais aguardando push:** consolidado overnight 2 (Solar PRO completo: alertas piscantes, CSV, print footer, filtro status, fullscreen, error boundary, hover details)
 
 ---
 
@@ -407,3 +407,63 @@ Versus estimativa inicial Lovable: R$ 3.450. **Economia: R$ 3.050+** mantida.
 ---
 
 *Sprint 1 entregou MVP em 1 sessão. Sprint 2 foi distribuído em duas sessões — robustez + observability + UX + preparação Google Ads em 13/05; Story 2.1 totalmente preparada + polimento profundo (a11y, atalhos, breadcrumbs, status pills) em 14/05 — sem regressões em produção em momento algum. Performance não é sorte. É método.*
+
+---
+
+## Overnight 2 — Solar PRO completo (14/05/2026, autônomo)
+
+Sessão autônoma overnight com mandato "quero ele perfeito · nunca pare · autonomia absoluta". Pesquisa profunda de UI/UX para dashboards de performance (NN/g, Smashing 2025, Stripe/Linear/Vercel) + 7 entregas consolidadas num único commit.
+
+### Entregas
+
+| # | Entrega | Arquivos | Detalhe |
+|---|---|---|---|
+| 1 | **Hero 8 cards (CPA + métricas solar)** | `BlocoA_Hero.tsx`, `types.ts` | Adicionou CAC, ROAS, Vendas, Ticket médio. Hero passou de 4 → 8 cards |
+| 2 | **Bloco Pipeline (H) — comercial** | `BlocoH_Pipeline.tsx` (novo) | Open count/revenue, win rate, ciclo médio, forecast vs aberto |
+| 3 | **Bloco Loss Reasons (I) — top motivos de perda** | `BlocoI_LossReasons.tsx` (novo) | Top 5 `closeLostReason` com bar chart e receita perdida |
+| 4 | **Bloco Mix Solar reformulado** | `BlocoE_Mix.tsx` | 4 produtos (solar/armaz./bomba/wallbox) + EmptyState distinguindo "sem venda" de "sem classificação técnica" |
+| 5 | **Alertas piscantes contextuais** | `index.css` | `@keyframes pulse-alert-danger/warning` aplicado em CPL `bad` e ROAS < 1, com `prefers-reduced-motion: reduce` |
+| 6 | **Export CSV das campanhas** | `csv.ts` (novo), `BlocoC_Campanhas.tsx` | Botão Download no Bloco C com nome `campanhas-revert-{periodo}-{data}.csv`, BOM UTF-8, `;` como separador (Excel BR) |
+| 7 | **Print footer institucional** | `PrintFooter.tsx` (novo) | Cliente/Período/Gerado em — visível só no PDF; tagline Escala + CNPJ |
+| 8 | **Filtro ATIVA/PAUSED no Bloco C** | `BlocoC_Campanhas.tsx` | Toggle ao lado do filtro de canal; cor warning em "Pausadas" |
+| 9 | **Atalho `F` para fullscreen** | `useKeyboardShortcuts.ts`, `DashboardContainer.tsx`, `ShortcutsOverlay.tsx` | Fullscreen API (apresentação para reuniões) com fallback silencioso |
+| 10 | **Error Boundary visível por bloco** | `BlockErrorBoundary.tsx` (novo), `DashboardContainer.tsx` | Cada bloco isolado; falha em um não derruba o dashboard. Botão "tentar de novo" + log no Sentry |
+| 11 | **Hover expandido nos cards Hero** | `BlocoA_Hero.tsx` | Mín/Máx/Média 7d revelados em `group-hover`/`group-focus-within` (Verba, CPL, Leads). Receita+Verba em CAC/ROAS. Receita+Ticket em Vendas |
+
+### Backend (n8n via MCP)
+
+- `Calcular Metricas` recebeu `computeWindow()` retornando por período: hero (com CAC/ROAS/vendas), funil, campanhas, velocidade, **pipeline**, **loss_reasons**, sparkline_7d
+- Root agrega `mixSolar` consolidando `solarPackage`/`sesPackage`/`heatpumpPackage`/`wallboxPackage`
+- Workflow `AJypFIeC4rMcs18P` atualizado e publicado via `update_workflow` + `publish_workflow`
+- **Custo aceito:** cada `update_workflow` desvincula credentials Meta — Cleiton reconecta os 4 nodes HTTP manualmente (~2min)
+
+### Bugs descobertos e resolvidos
+
+| Bug | Causa | Fix |
+|---|---|---|
+| Mix Solar zerado mesmo com 13 vendas | Reonic não tem `solarPackage` preenchido na Revert | EmptyState explicativo distinguindo "sem vendas" de "sem classificação técnica" |
+| Reonic `/h360/offers ?page=N` retorna subset enviesado | Paginação inconsistente da API | Chamada única sem `page` (100 mais recentes ≈ 38 dias) |
+| Meta `time_increment=1 + last_30d` não inclui hoje | API exclui o dia corrente | Mantido node "Buscar Spend Meta Hoje" com `date_preset=today` separado |
+| `avg_response_time` medindo automação Zaia, não humano | Estava usando `requestCreatedAt` | Trocado por primeira `note.createdAt` do offer (toque humano real) |
+| Funil PT-BR não mapeado (status reais Reonic) | Estava buscando nomes em inglês | Mapeamento corrigido: "Solicitação de Proposta (Engenharia)", "Proposta Gerada", "Em Negociação", "Forecast Semanal - Assinaturas", "Aguardando PA." |
+| n8n `staticData` não persistia entre execuções | `executionMode: "manual"` no `execute_workflow` | Sempre usar `executionMode: "production"` |
+| n8n separa draft/active version | Update não vira active automaticamente | Sempre `publish_workflow` após `update_workflow` |
+
+### Decisões de design (pesquisa profunda UI/UX)
+
+- **Contraste WCAG AA:** trocou `text-gray-500` (3.5:1) por `#8B8E97` (>4.5:1) e `#0A0A0A` (preto puro fadiga ocular) por `#0F1116` com escala `surface-1/2/3`.
+- **Alertas piscantes:** animação sutil 1.8–2s (não distrai, chama atenção). Desabilitada com `prefers-reduced-motion: reduce`.
+- **Hover detalhes:** revelados via `group-hover`/`group-focus-within` (acessível por teclado). `max-h` transition pra layout estável.
+- **Error Boundary granular:** cada bloco isolado — falha em Google Ads não derruba Hero/Pipeline/etc. Padrão "fail-soft" do Linear/Notion.
+- **CSV com `;`:** Excel BR usa vírgula como separador decimal → CSV com `,` quebra. BOM UTF-8 garante acentos.
+- **Print footer:** PDF deve ser auto-explicativo (cliente, período, data) — protocolo de reunião offline.
+
+### Métricas finais da sessão
+
+- **Arquivos modificados:** 6
+- **Arquivos novos:** 3 (`BlockErrorBoundary.tsx`, `PrintFooter.tsx`, `csv.ts`)
+- **Builds verde:** 2/2
+- **Commits:** 1 consolidado (pendente push)
+- **Linhas frontend:** +~700 / -~80
+
+*Cada melhoria deste overnight foi pensada para o caso real da Revert: uma assessoria que precisa entregar relatórios visuais ao cliente. PDF auto-explicativo, fullscreen pra apresentações, alertas pra reagir rápido, error boundary pra robustez sem queda total. Solar PRO completo — pronto pra reunião.*

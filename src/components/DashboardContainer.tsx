@@ -12,6 +12,8 @@ import { BlocoF_Saturacao } from './BlocoF_Saturacao';
 import { BlocoG_GoogleAds } from './BlocoG_GoogleAds';
 import { BlocoH_Pipeline } from './BlocoH_Pipeline';
 import { BlocoI_LossReasons } from './BlocoI_LossReasons';
+import { PrintFooter } from './shared/PrintFooter';
+import { BlockErrorBoundary } from './shared/BlockErrorBoundary';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { googleAdsSampleFixture } from '@/lib/fixtures/googleAdsSample';
@@ -74,6 +76,20 @@ export function DashboardContainer() {
     [refresh]
   );
 
+  const toggleFullscreen = useCallback(() => {
+    try {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.();
+        addBreadcrumb({ category: 'ui.shortcut', message: 'fullscreen_enter' });
+      } else {
+        document.exitFullscreen?.();
+        addBreadcrumb({ category: 'ui.shortcut', message: 'fullscreen_exit' });
+      }
+    } catch {
+      // Fullscreen API indisponível ou bloqueado — fallback silencioso
+    }
+  }, []);
+
   useKeyboardShortcuts({
     onRefresh: useCallback(() => handleRefresh('shortcut'), [handleRefresh]),
     onPeriodHoje: useCallback(() => setPeriod('hoje'), []),
@@ -87,6 +103,7 @@ export function DashboardContainer() {
       });
     }, []),
     onCloseHelp: useCallback(() => setHelpOpen(false), []),
+    onToggleFullscreen: toggleFullscreen,
   });
 
   const isGooglePreview = useMemo(() => {
@@ -150,42 +167,62 @@ export function DashboardContainer() {
 
         <div className="space-y-6">
           <div className="animate-fade-in-up">
-            <BlocoA_Hero data={isChangingPeriod ? null : heroData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} sparkline={isChangingPeriod ? null : sparkline} />
+            <BlockErrorBoundary blockName="Hero · KPIs principais">
+              <BlocoA_Hero data={isChangingPeriod ? null : heroData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} sparkline={isChangingPeriod ? null : sparkline} />
+            </BlockErrorBoundary>
           </div>
 
           <div className="animate-fade-in-up stagger-1">
-            <BlocoH_Pipeline data={isChangingPeriod ? null : pipelineData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            <BlockErrorBoundary blockName="Pipeline comercial">
+              <BlocoH_Pipeline data={isChangingPeriod ? null : pipelineData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            </BlockErrorBoundary>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-2">
-            <BlocoB_Funil data={isChangingPeriod ? null : funilData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
-            <BlocoE_Mix data={mixSolarData} loading={loading} />
+            <BlockErrorBoundary blockName="Funil de conversão">
+              <BlocoB_Funil data={isChangingPeriod ? null : funilData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            </BlockErrorBoundary>
+            <BlockErrorBoundary blockName="Mix solar">
+              <BlocoE_Mix data={mixSolarData} loading={loading} />
+            </BlockErrorBoundary>
           </div>
 
           <div className="grid grid-cols-1 gap-5 animate-fade-in-up stagger-3">
-            <BlocoC_Campanhas data={isChangingPeriod ? null : campanhasData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            <BlockErrorBoundary blockName="Performance por campanha">
+              <BlocoC_Campanhas data={isChangingPeriod ? null : campanhasData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            </BlockErrorBoundary>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fade-in-up stagger-3">
-            <BlocoD_Velocidade data={isChangingPeriod ? null : velocidadeData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
-            <BlocoF_Saturacao data={data?.saturacao ?? null} loading={loading} />
+            <BlockErrorBoundary blockName="Velocidade de atendimento">
+              <BlocoD_Velocidade data={isChangingPeriod ? null : velocidadeData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            </BlockErrorBoundary>
+            <BlockErrorBoundary blockName="Saturação de criativos">
+              <BlocoF_Saturacao data={data?.saturacao ?? null} loading={loading} />
+            </BlockErrorBoundary>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 animate-fade-in-up stagger-4">
-            <BlocoI_LossReasons data={isChangingPeriod ? null : lossReasonsData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            <BlockErrorBoundary blockName="Motivos de perda">
+              <BlocoI_LossReasons data={isChangingPeriod ? null : lossReasonsData} loading={loading || isChangingPeriod} periodLabel={PERIOD_LABELS[period]} />
+            </BlockErrorBoundary>
             <div>
               {isGooglePreview && (
                 <div className="mb-3 text-[10px] uppercase tracking-[0.2em] text-gold/60 border border-gold/20 bg-gold/5 px-3 py-1.5 rounded">
                   Preview sintético · remova ?preview=google da URL
                 </div>
               )}
-              <BlocoG_GoogleAds
-                data={googleAdsBlock}
-                loading={loading && !isGooglePreview}
-                sourceStatus={googleAdsStatus}
-              />
+              <BlockErrorBoundary blockName="Google Ads">
+                <BlocoG_GoogleAds
+                  data={googleAdsBlock}
+                  loading={loading && !isGooglePreview}
+                  sourceStatus={googleAdsStatus}
+                />
+              </BlockErrorBoundary>
             </div>
           </div>
+
+          <PrintFooter periodLabel={PERIOD_LABELS[period]} generatedAt={data?.meta.generated_at} />
         </div>
       </main>
       <Footer onOpenShortcuts={() => setHelpOpen(true)} />
